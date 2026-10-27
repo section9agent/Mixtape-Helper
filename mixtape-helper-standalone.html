@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cassette Mixtape Helper</title>
+<!-- Google Fonts: handwriting + condensed styles for J-card -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Indie+Flower&family=Patrick+Hand&family=Courier+Prime:wght@400;700&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 /* ── TOKENS ── analog warmth: cassette plastic, tape oxide, paper inserts */
@@ -426,151 +430,177 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   overflow-x: auto;
   margin-bottom: 16px;
 }
+
 /* ═══════════════════════════════════════════════════════════════
-   J-CARD  —  6-panel fold-around layout
-   Based on measured template proportions (2494px wide reference):
-   ┌──────┬────────────┬───────┬─────────────┬─────────────┬──────────┐
-   │ L-sp │  L-back    │ spine │  Front art  │  R-back     │  R-flap  │
-   │  7%  │   12%      │  6%   │    31%      │    31%      │   13%    │
-   └──────┴────────────┴───────┴─────────────┴─────────────┴──────────┘
-   Fold lines: dashed; outer borders: solid.
-   Screen preview: 900×446px (roughly half of print 7"×3.5" stock).
+   J-CARD  —  free-placement text block system
+   Template image fills the canvas; text blocks are draggable,
+   resizable and rotatable so the user can align them to whatever
+   template they load.
    ═══════════════════════════════════════════════════════════════ */
 
-/* Wrapper that holds the exact card aspect ratio */
+/* Full-image canvas */
 .jcard-canvas-wrap {
   position: relative;
   width: 900px;
-  height: 446px;
-  background: #fff;
-  font-family: 'Arial Narrow', Arial, sans-serif;
+  height: 447px;
+  background: #ccc;
+  font-family: var(--jcard-font, 'Arial Narrow', Arial, sans-serif);
   box-shadow: 0 3px 18px rgba(0,0,0,0.35);
   overflow: hidden;
-  border: 1px solid #aaa;
-  box-sizing: border-box;
+  flex-shrink: 0;
+  user-select: none;
+}
+.jcard-canvas-wrap.edit-mode {
+  cursor: default;
 }
 
-/* Art background — only fills the Front Cover panel */
-.jcard-front-bg {
-  position: absolute;
-  /* Front panel starts at 25.2% and ends at 56.0% */
-  left: 25.2%; width: 30.8%;
-  top: 0; bottom: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.jcard-front-bg img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0.85;
-  display: block;
-}
-
-/* Overlay carries all text, sits on top of art */
-.jcard-overlay {
+/* Layer 1: template image */
+.jcard-template-img {
   position: absolute;
   inset: 0;
+  width: 100%; height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  display: block;
+}
+.jcard-no-template {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e4dc;
+  color: #888;
+  font-size: 13px;
+  font-style: italic;
   pointer-events: none;
 }
 
-/* ── Panel geometry — absolute positioning mirrors template ── */
-
-/* Panel 1: Left spine — 0%–7.2% */
-.jcard-p-lspine {
+/* Layer 2: cover art (fixed to cover panel area, user positions text over it) */
+.jcard-cover-art {
   position: absolute;
-  left: 0; width: 7.2%; top: 0; bottom: 0;
-  border-right: 1px dashed rgba(0,0,0,0.35);
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.03);
-  box-sizing: border-box;
-}
-/* Panel 2: Left back — 7.2%–19.2% */
-.jcard-p-lback {
-  position: absolute;
-  left: 7.2%; width: 12.0%; top: 0; bottom: 0;
-  border-right: 1px dashed rgba(0,0,0,0.35);
-  padding: 8px 7px;
-  box-sizing: border-box;
+  left: 25.18%; width: 30.82%;
+  top: 0; bottom: 0;
   overflow: hidden;
+  pointer-events: none;
 }
-/* Panel 3: Spine — 19.2%–25.2% */
-.jcard-p-spine {
-  position: absolute;
-  left: 19.2%; width: 6.0%; top: 0; bottom: 0;
-  border-right: 1px dashed rgba(0,0,0,0.35);
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.04);
-  box-sizing: border-box;
-}
-/* Panel 4: Front cover — 25.2%–56.0% */
-.jcard-p-front {
-  position: absolute;
-  left: 25.2%; width: 30.8%; top: 0; bottom: 0;
-  border-right: 1px solid rgba(0,0,0,0.5);
-  padding: 10px 12px;
-  display: flex; flex-direction: column;
-  justify-content: space-between;
-  box-sizing: border-box;
-}
-/* Panel 5: Right back (main tracklist) — 56.0%–86.7% */
-.jcard-p-rback {
-  position: absolute;
-  left: 56.0%; width: 30.7%; top: 0; bottom: 0;
-  border-right: 1px dashed rgba(0,0,0,0.35);
-  padding: 10px 12px;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-/* Panel 6: Right flap — 86.7%–100% */
-.jcard-p-rflap {
-  position: absolute;
-  left: 86.7%; right: 0; top: 0; bottom: 0;
-  padding: 8px 7px;
-  box-sizing: border-box;
-  overflow: hidden;
+.jcard-cover-art img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.82;
 }
 
-/* Spine text (both spine panels) */
+/* Layer 3: free-placement text blocks */
+.jcard-block {
+  position: absolute;
+  box-sizing: border-box;
+  cursor: move;
+  min-width: 24px;
+  min-height: 16px;
+}
+.jcard-block.selected {
+  outline: 1.5px dashed rgba(0,120,255,0.7);
+  outline-offset: 1px;
+}
+.jcard-block-inner {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 3px 5px;
+  pointer-events: none;
+}
+
+/* Resize handle — bottom-right corner */
+.jcard-resize-handle {
+  position: absolute;
+  right: -5px; bottom: -5px;
+  width: 12px; height: 12px;
+  background: #0078ff;
+  border-radius: 50%;
+  cursor: se-resize;
+  z-index: 10;
+  display: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.jcard-block.selected .jcard-resize-handle { display: block; }
+
+/* Rotation handle — top-center */
+.jcard-rotate-handle {
+  position: absolute;
+  left: 50%; top: -18px;
+  transform: translateX(-50%);
+  width: 12px; height: 12px;
+  background: #00aa44;
+  border-radius: 50%;
+  cursor: grab;
+  z-index: 10;
+  display: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.jcard-block.selected .jcard-rotate-handle { display: block; }
+
+/* Block toolbar — floats above selected block */
+.jcard-block-toolbar {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: none;
+  gap: 4px;
+  background: rgba(20,20,20,0.88);
+  border-radius: 5px;
+  padding: 3px 5px;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: all;
+}
+.jcard-block.selected .jcard-block-toolbar { display: flex; }
+.jcard-block-toolbar button {
+  font-size: 10px; padding: 2px 6px;
+  background: rgba(255,255,255,0.12); border: none;
+  color: #fff; border-radius: 3px; cursor: pointer;
+  font-family: var(--font-ui, sans-serif);
+}
+.jcard-block-toolbar button:hover { background: rgba(255,255,255,0.25); }
+.jcard-block-toolbar input[type=number] {
+  width: 38px; font-size: 10px; padding: 2px 4px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+  color: #fff; border-radius: 3px; text-align: center;
+  font-family: var(--font-ui, sans-serif);
+}
+
+/* Text styles inside blocks */
+.jcard-side-label {
+  font-size: 9px; font-weight: bold; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #555; margin: 0 0 4px;
+  padding-bottom: 3px; border-bottom: 1px solid rgba(0,0,0,0.18);
+}
+.jcard-tracklist { list-style: none; margin: 0; padding: 0; }
+.jcard-track {
+  display: flex; gap: 4px; font-size: 9px;
+  line-height: 1.5; color: #222; overflow: hidden;
+}
+.jcard-track-num  { min-width: 14px; color: #888; flex-shrink: 0; }
+.jcard-track-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jcard-track-dur  { color: #666; flex-shrink: 0; font-size: 8px; }
+.jcard-panel-title {
+  font-size: 13px; font-weight: 700; color: #111;
+  margin: 0 0 2px; line-height: 1.2; word-break: break-word;
+  text-shadow: 0 1px 4px rgba(255,255,255,0.9);
+}
+.jcard-panel-artist {
+  font-size: 9px; color: #333; margin: 0;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+}
 .jcard-spine-text {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  max-height: 92%;
-  text-overflow: ellipsis;
-  color: #111;
-}
-
-/* Front panel: tracks at top, title/artist anchored at bottom */
-.jcard-front-tracks {
-  flex: 1;
-  overflow: hidden;
-  padding-bottom: 6px;
-}
-.jcard-front-meta {
-  padding-top: 5px;
-  border-top: 1px solid rgba(0,0,0,0.15);
-}
-.jcard-panel-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #111;
-  margin: 0 0 1px;
-  line-height: 1.2;
-  word-break: break-word;
-  text-shadow: 0 1px 3px rgba(255,255,255,0.8);
-}
-.jcard-panel-artist {
-  font-size: 8.5px;
-  color: #333;
-  margin: 0;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.7);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; white-space: nowrap;
+  overflow: hidden; color: #111;
+  display: block; height: 100%;
 }
 
 /* Back/Side B tracklist */
@@ -781,7 +811,37 @@ textarea.paste-area {
         <input type="text" id="jcardYear" value="" style="max-width:100px" oninput="renderJcard()">
       </div>
     </div>
+    <div class="row mb8">
+      <div>
+        <label for="jcardFont">Font style</label>
+        <select id="jcardFont" onchange="renderJcard()">
+          <optgroup label="Handwriting">
+            <option value="'Caveat', cursive">Caveat (handwritten)</option>
+            <option value="'Dancing Script', cursive">Dancing Script (elegant)</option>
+            <option value="'Indie Flower', cursive">Indie Flower (casual)</option>
+            <option value="'Patrick Hand', cursive">Patrick Hand (neat print)</option>
+          </optgroup>
+          <optgroup label="Standard">
+            <option value="'Arial Narrow', Arial, sans-serif" selected>Arial Narrow (default)</option>
+            <option value="'Courier Prime', 'Courier New', monospace">Courier Prime (typewriter)</option>
+            <option value="Georgia, serif">Georgia (serif)</option>
+            <option value="'Oswald', sans-serif">Oswald (condensed)</option>
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <label for="jcardTemplateInput">J-card template image</label>
+        <input type="file" id="jcardTemplateInput" accept="image/*" style="width:100%;padding:4px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--fg);font-size:12px;cursor:pointer" onchange="loadJcardTemplate(this)">
+      </div>
+    </div>
     <div class="hint">Track list is read from the Mixtape Planner. Load a playlist there first.</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 14px;margin-top:10px;font-size:12px;line-height:1.7">
+      <strong>Where to get J-card template images:</strong><br>
+      • <a href="https://www.cassetteking.com/how-to-create-cassette-j-cards/" target="_blank" rel="noopener" style="color:var(--accent)">cassetteking.com</a> — tutorials and downloadable blank templates<br>
+      • <a href="https://tapeartrepros.sergiostuff.com" target="_blank" rel="noopener" style="color:var(--accent)">tapeartrepros.sergiostuff.com</a> — high-res reproductions of real cassette J-cards<br>
+      • Search <strong>Discogs</strong> for your cassette release — click the image to download artwork at full resolution<br>
+      <span style="color:var(--fg3)">Save the image to your computer, then load it with the file picker above. The default text block positions match a standard 3-panel layout (back flap · spine · cover · insert). Drag, resize, or rotate any block to line it up with your template's fold marks.</span>
+    </div>
   </div>
 
   <div class="card mb16">
@@ -851,19 +911,22 @@ textarea.paste-area {
     <div class="card-title">J-Card Preview</div>
     <div class="jcard-preview-wrap">
       <div style="overflow-x:auto">
-      <div class="jcard-canvas-wrap" id="jcardCanvas">
-        <!-- Art fills only the Front Cover panel (panel 4) -->
-        <div class="jcard-front-bg" id="jcardFrontBg"></div>
-        <!-- All text panels sit in the overlay -->
-        <div class="jcard-overlay" id="jcardOverlay"></div>
+      <div class="jcard-canvas-wrap edit-mode" id="jcardCanvas" onclick="jcardCanvasClick(event)">
+        <!-- Layer 1: template image -->
+        <img class="jcard-template-img" id="jcardTemplateImg" src="" alt="" style="display:none">
+        <div class="jcard-no-template" id="jcardNoTemplate">Load a J-card template image above</div>
+        <!-- Layer 2: tape art (cover panel area) -->
+        <div class="jcard-cover-art" id="jcardCoverArt"></div>
+        <!-- Layer 3: free-placement text blocks injected here by JS -->
       </div>
       </div>
     </div>
     <p class="hint" style="margin-top:6px">
-      6-panel fold-around layout (Left spine · Left back · Spine · <strong>Front cover</strong> · Right back · Right flap).
-      Save as HTML then File → Print → Save as PDF for a print-ready copy.
+      Click a text block to select it, then drag to move · corner dot to resize · green dot to rotate.
+      Load your J-card template above — text blocks snap to default positions or drag them anywhere to match your template's lines.
     </p>
     <div class="flex-end mt8">
+      <button onclick="resetJcardLayout()">↺ Reset layout</button>
       <button onclick="saveJcardHtml()">⬇ Save as HTML</button>
     </div>
   </div>
@@ -933,6 +996,8 @@ let appState = {
   artCatalog: [],      // [{name, brand, year, length, previewUrl, pageUrl}]
   artLoaded: false,
   currentJcardTape: 0,
+  jcardTemplateUrl: '',  // blob URL for loaded template image
+  currentArtUrl: '',     // blob URL for current tape art
 };
 
 // ═══════════════════════════════════════════════
@@ -1448,13 +1513,13 @@ function selectArtByIndex(idx) {
 }
 
 function applyArtToJcard(url) {
-  // Set art on the front-cover panel only
-  const frontBg = document.getElementById('jcardFrontBg');
-  if (!frontBg) return;
+  // Set art on the Cover panel only (layer 2)
+  const coverArt = document.getElementById('jcardCoverArt');
+  if (!coverArt) return;
   if (url) {
-    frontBg.innerHTML = `<img src="${escHtml(url)}" alt="tape art" onerror="this.parentNode.innerHTML=''">`;
+    coverArt.innerHTML = `<img src="${escHtml(url)}" alt="tape art" onerror="this.parentNode.innerHTML=''">`;
   } else {
-    frontBg.innerHTML = '';
+    coverArt.innerHTML = '';
   }
   appState.currentArtUrl = url || '';
 }
@@ -1513,77 +1578,295 @@ async function loadTapeArtCatalog() {
 }
 
 // ═══════════════════════════════════════════════
-//  J-CARD RENDERER
+//  J-CARD — FREE-PLACEMENT ENGINE
+//  Each text block is a draggable, resizable,
+//  rotatable element over the template image.
 // ═══════════════════════════════════════════════
-function renderJcard() {
-  const title = document.getElementById('jcardTitle').value || 'My Mixtape';
-  const artist = document.getElementById('jcardArtist').value || '';
-  const year = document.getElementById('jcardYear').value || '';
 
-  // Build tape nav if more than 1 tape
+// Block state: array of {id, type, x, y, w, h, rot, fontSize, color}
+// Positions/sizes stored as px (canvas is 900×447)
+let jcardBlocks = [];
+let jcardSelectedId = null;
+
+// Default block layout (measured from template, expressed as px on 900×447 canvas)
+// Coordinates derived from PSD (2494×1238) scaled to app canvas (900×447)
+// Scale factors: x*900/2494, y*447/1238
+// PSD layers: Back Flap (176,15,303×1205), Spine (475,15,156×1205),
+//   Cover (628,15,771×1205), Cover Side A Text (628,616,771×605),
+//   Cover Side B Text (627,18,771×605),
+//   Inside Flap (1395,15,768×1205), Inside Flap Side A Text (1392,616,771×605),
+//   Inside Flap Side B Text (1392,18,771×605)
+// Side A & B blocks rotated 90° per user instruction
+function jcardDefaultLayout() {
+  return [
+    // Back flap — spine text, runs full height, no rotation
+    { id: 'backflap',   type: 'spine',  label: 'Back Flap (spine text)',
+      x: 64,  y: 5,   w: 109, h: 435, rot: 0,   fontSize: 10, color: '#111' },
+    // Spine — vertical text strip
+    { id: 'spine',      type: 'spine',  label: 'Spine',
+      x: 171, y: 5,   w: 56,  h: 435, rot: 0,   fontSize: 10, color: '#111' },
+    // Cover panel — Side A tracklist (bottom half of cover, rotated 90°)
+    { id: 'coverSideA', type: 'sideA',  label: 'Cover – Side A',
+      x: 227, y: 222, w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
+    // Cover panel — Side B tracklist (top half of cover, rotated 90°)
+    { id: 'coverSideB', type: 'sideB',  label: 'Cover – Side B',
+      x: 226, y: 7,   w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
+    // Inside flap — Side A tracklist (bottom half, rotated 90°)
+    { id: 'insertSideA',type: 'sideA',  label: 'Insert – Side A',
+      x: 502, y: 222, w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
+    // Inside flap — Side B tracklist (top half, rotated 90°)
+    { id: 'insertSideB',type: 'sideB',  label: 'Insert – Side B',
+      x: 502, y: 7,   w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
+  ];
+}
+
+function loadJcardTemplate(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (appState.jcardTemplateUrl && appState.jcardTemplateUrl.startsWith('blob:')) {
+    URL.revokeObjectURL(appState.jcardTemplateUrl);
+  }
+  const url = URL.createObjectURL(file);
+  appState.jcardTemplateUrl = url;
+  const img = document.getElementById('jcardTemplateImg');
+  const noTmpl = document.getElementById('jcardNoTemplate');
+  if (img) { img.src = url; img.style.display = 'block'; }
+  if (noTmpl) noTmpl.style.display = 'none';
+}
+
+function jcardGetContent() {
+  const title  = document.getElementById('jcardTitle').value  || 'My Mixtape';
+  const artist = document.getElementById('jcardArtist').value || '';
+  const year   = document.getElementById('jcardYear').value   || '';
   const splits = appState.splits;
-  const navEl = document.getElementById('jcardTapeNav');
+  const tape   = splits[appState.currentJcardTape] || null;
+  const sideA  = tape ? tape.sideA : appState.tracks.slice(0, Math.ceil(appState.tracks.length / 2));
+  const sideB  = tape ? tape.sideB : appState.tracks.slice(Math.ceil(appState.tracks.length / 2));
+  const tapeLabel = splits.length > 1 ? `Tape ${appState.currentJcardTape + 1} — ` : '';
+  const spineText = `${tapeLabel}${title}${artist ? ' · ' + artist : ''}${year ? ' · ' + year : ''}`;
+  return { title, artist, year, sideA, sideB, spineText };
+}
+
+function trackListHtml(tracks, sideLabel, fontSize) {
+  const fs = fontSize || 9;
+  if (!tracks.length) return `<div style="color:rgba(0,0,0,0.35);font-size:${fs}px;font-style:italic">No tracks loaded</div>`;
+  return `<div class="jcard-side-label" style="font-size:${fs-1}px">Side ${sideLabel}</div>
+    <ul class="jcard-tracklist">${tracks.map((t, i) => `<li class="jcard-track" style="font-size:${fs}px">
+      <span class="jcard-track-num">${i + 1}.</span>
+      <span class="jcard-track-name">${escHtml(t.title)}</span>
+      ${t.duration !== null ? `<span class="jcard-track-dur">${formatDur(t.duration)}</span>` : ''}
+    </li>`).join('')}</ul>`;
+}
+
+function blockInnerHtml(block, content) {
+  const { type, fontSize, color } = block;
+  const fs = fontSize || 9;
+  const col = color || '#111';
+  if (type === 'spine') {
+    return `<span class="jcard-spine-text" style="font-size:${fs}px;color:${col}">${escHtml(content.spineText)}</span>`;
+  }
+  if (type === 'sideA') {
+    return `${trackListHtml(content.sideA, 'A', fs)}
+      <div style="margin-top:auto;padding-top:5px;border-top:1px solid rgba(0,0,0,0.18)">
+        <div class="jcard-panel-title" style="font-size:${fs+4}px;color:${col}">${escHtml(content.title)}</div>
+        ${content.artist ? `<div class="jcard-panel-artist" style="font-size:${fs-1}px;color:${col}">${escHtml(content.artist)}${content.year ? ' · ' + escHtml(content.year) : ''}</div>` : ''}
+      </div>`;
+  }
+  if (type === 'sideB') {
+    return trackListHtml(content.sideB, 'B', fs);
+  }
+  return '';
+}
+
+function renderBlockEl(block, content, isSelected) {
+  const el = document.createElement('div');
+  el.className = 'jcard-block' + (isSelected ? ' selected' : '');
+  el.dataset.id = block.id;
+  el.style.cssText = `left:${block.x}px;top:${block.y}px;width:${block.w}px;height:${block.h}px;`
+    + `transform:rotate(${block.rot||0}deg);transform-origin:center center;`;
+
+  // Inner content
+  const inner = document.createElement('div');
+  inner.className = 'jcard-block-inner';
+  if (block.type === 'sideA') {
+    inner.style.cssText = 'display:flex;flex-direction:column;height:100%;justify-content:space-between;';
+  }
+  inner.innerHTML = blockInnerHtml(block, content);
+  el.appendChild(inner);
+
+  // Handles (only visible when selected)
+  const resizeH = document.createElement('div');
+  resizeH.className = 'jcard-resize-handle';
+  resizeH.title = 'Resize';
+  el.appendChild(resizeH);
+
+  const rotH = document.createElement('div');
+  rotH.className = 'jcard-rotate-handle';
+  rotH.title = 'Rotate';
+  el.appendChild(rotH);
+
+  // Toolbar
+  const tb = document.createElement('div');
+  tb.className = 'jcard-block-toolbar';
+  tb.innerHTML = `
+    <span style="color:#aaa;font-size:10px;margin-right:2px">${block.label||block.id}</span>
+    <label style="color:#aaa;font-size:10px">size</label>
+    <input type="number" min="5" max="30" value="${block.fontSize||9}" title="Font size"
+      onchange="jcardSetFontSize('${block.id}',+this.value)" onclick="event.stopPropagation()">
+    <input type="color" value="${block.color||'#111111'}" title="Text color" style="width:24px;height:20px;padding:1px;border:none;background:none;cursor:pointer"
+      oninput="jcardSetColor('${block.id}',this.value)" onclick="event.stopPropagation()">
+    <button onclick="jcardDeleteBlock('${block.id}');event.stopPropagation()">✕</button>`;
+  el.appendChild(tb);
+
+  // Drag
+  el.addEventListener('mousedown', jcardBlockMousedown);
+  resizeH.addEventListener('mousedown', jcardResizeMousedown);
+  rotH.addEventListener('mousedown', jcardRotateMousedown);
+
+  return el;
+}
+
+function renderJcard() {
+  const fontEl = document.getElementById('jcardFont');
+  const font   = fontEl ? fontEl.value : "'Arial Narrow', Arial, sans-serif";
+  const canvas = document.getElementById('jcardCanvas');
+  if (!canvas) return;
+
+  // Apply font
+  canvas.style.setProperty('--jcard-font', font);
+  canvas.style.fontFamily = font;
+
+  // Build tape nav
+  const splits = appState.splits;
+  const navEl  = document.getElementById('jcardTapeNav');
   if (splits.length > 1) {
-    let navHtml = '<div style="font-size:12px;color:var(--fg2);margin-bottom:6px;font-weight:500;">Select tape to preview:</div><div class="jcard-tape-nav">';
+    let h = '<div style="font-size:12px;color:var(--fg2);margin-bottom:6px;font-weight:500">Select tape:</div><div class="jcard-tape-nav">';
     splits.forEach((t, i) => {
-      navHtml += `<button class="${i===appState.currentJcardTape?'active':''}" onclick="appState.currentJcardTape=${i};renderJcard()">Tape ${i+1}</button>`;
+      h += `<button class="${i===appState.currentJcardTape?'active':''}" onclick="appState.currentJcardTape=${i};renderJcard()">Tape ${i+1}</button>`;
     });
-    navHtml += '</div>';
-    navEl.innerHTML = navHtml;
+    navEl.innerHTML = h + '</div>';
     navEl.style.display = 'block';
   } else {
-    navEl.innerHTML = '';
-    navEl.style.display = 'none';
+    navEl.innerHTML = ''; navEl.style.display = 'none';
     appState.currentJcardTape = 0;
   }
 
-  const tape = splits[appState.currentJcardTape] || null;
-  const sideATracks = tape ? tape.sideA : appState.tracks.slice(0, Math.ceil(appState.tracks.length / 2));
-  const sideBTracks = tape ? tape.sideB : appState.tracks.slice(Math.ceil(appState.tracks.length / 2));
-  const tapeLabel = splits.length > 1 ? `Tape ${(appState.currentJcardTape + 1)} — ` : '';
-  const spineText = `${tapeLabel}${title}${artist ? ' · ' + artist : ''}${year ? ' · ' + year : ''}`;
+  // Init blocks if first render
+  if (!jcardBlocks.length) jcardBlocks = jcardDefaultLayout();
 
-  function trackListHtml(tracks, sideLabel) {
-    if (!tracks.length) return `<div style="color:rgba(0,0,0,0.35);font-size:9px;font-style:italic;">No tracks</div>`;
-    return `<div class="jcard-side-label">Side ${sideLabel}</div>
-      <ul class="jcard-tracklist">${tracks.map((t, i) => `<li class="jcard-track">
-        <span class="jcard-track-num">${i + 1}.</span>
-        <span class="jcard-track-name">${escHtml(t.title)}</span>
-        ${t.duration !== null ? `<span class="jcard-track-dur">${formatDur(t.duration)}</span>` : ''}
-      </li>`).join('')}</ul>`;
+  const content = jcardGetContent();
+
+  // Remove old blocks (keep template img, cover art, no-template placeholder)
+  canvas.querySelectorAll('.jcard-block').forEach(el => el.remove());
+
+  // Render each block
+  jcardBlocks.forEach(block => {
+    const el = renderBlockEl(block, content, block.id === jcardSelectedId);
+    canvas.appendChild(el);
+  });
+}
+
+function resetJcardLayout() {
+  jcardBlocks = jcardDefaultLayout();
+  jcardSelectedId = null;
+  renderJcard();
+}
+
+function jcardCanvasClick(e) {
+  if (e.target === document.getElementById('jcardCanvas') ||
+      e.target === document.getElementById('jcardTemplateImg') ||
+      e.target === document.getElementById('jcardNoTemplate') ||
+      e.target.closest('.jcard-cover-art')) {
+    jcardSelectedId = null;
+    renderJcard();
   }
+}
 
-  // ── 6-panel fold-around layout ──────────────────────────────────────────
-  //  P1 Left spine  | P2 Left back | P3 Spine | P4 Front | P5 Right back | P6 Right flap
-  //  Side A tracklist → P4 Front (top) + title/artist at bottom of P4
-  //  Side B tracklist → P5 Right back
-  //  Spine text      → P3 Spine + P1 Left spine (mirrored / same text)
-  const overlay = document.getElementById('jcardOverlay');
-  overlay.innerHTML = `
-    <div class="jcard-p-lspine">
-      <div class="jcard-spine-text">${escHtml(spineText)}</div>
-    </div>
-    <div class="jcard-p-lback">
-      <div class="jcard-side-label" style="font-size:7px">Side B (cont.)</div>
-    </div>
-    <div class="jcard-p-spine">
-      <div class="jcard-spine-text">${escHtml(spineText)}</div>
-    </div>
-    <div class="jcard-p-front">
-      <div class="jcard-front-tracks">
-        ${trackListHtml(sideATracks, 'A')}
-      </div>
-      <div class="jcard-front-meta">
-        <div class="jcard-panel-title">${escHtml(title)}</div>
-        ${artist ? `<div class="jcard-panel-artist">${escHtml(artist)}${year ? ' &middot; ' + escHtml(year) : ''}</div>` : ''}
-      </div>
-    </div>
-    <div class="jcard-p-rback">
-      ${trackListHtml(sideBTracks, 'B')}
-    </div>
-    <div class="jcard-p-rflap">
-      <div style="font-size:7px;color:#888;margin-top:4px">${escHtml(year)}</div>
-    </div>`;
+function jcardSetFontSize(id, size) {
+  const b = jcardBlocks.find(b => b.id === id);
+  if (b) { b.fontSize = size; renderJcard(); }
+}
+function jcardSetColor(id, color) {
+  const b = jcardBlocks.find(b => b.id === id);
+  if (b) { b.color = color; renderJcard(); }
+}
+function jcardDeleteBlock(id) {
+  jcardBlocks = jcardBlocks.filter(b => b.id !== id);
+  if (jcardSelectedId === id) jcardSelectedId = null;
+  renderJcard();
+}
+
+// ── Drag ─────────────────────────────────────────────────────────────────
+let _drag = null;
+function jcardBlockMousedown(e) {
+  if (e.target.classList.contains('jcard-resize-handle')) return;
+  if (e.target.classList.contains('jcard-rotate-handle')) return;
+  if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+  e.preventDefault();
+  e.stopPropagation();
+  const el = e.currentTarget;
+  const id = el.dataset.id;
+  jcardSelectedId = id;
+  renderJcard();
+  const b = jcardBlocks.find(b => b.id === id);
+  if (!b) return;
+  _drag = { type: 'move', id, startX: e.clientX, startY: e.clientY, origX: b.x, origY: b.y };
+  document.addEventListener('mousemove', jcardDragMove);
+  document.addEventListener('mouseup',   jcardDragUp);
+}
+
+function jcardResizeMousedown(e) {
+  e.preventDefault(); e.stopPropagation();
+  const id = e.currentTarget.closest('.jcard-block').dataset.id;
+  const b  = jcardBlocks.find(b => b.id === id);
+  if (!b) return;
+  _drag = { type: 'resize', id, startX: e.clientX, startY: e.clientY, origW: b.w, origH: b.h };
+  document.addEventListener('mousemove', jcardDragMove);
+  document.addEventListener('mouseup',   jcardDragUp);
+}
+
+function jcardRotateMousedown(e) {
+  e.preventDefault(); e.stopPropagation();
+  const el = e.currentTarget.closest('.jcard-block');
+  const id = el.dataset.id;
+  const b  = jcardBlocks.find(b => b.id === id);
+  if (!b) return;
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width  / 2;
+  const cy = rect.top  + rect.height / 2;
+  _drag = { type: 'rotate', id, cx, cy, origRot: b.rot || 0 };
+  document.addEventListener('mousemove', jcardDragMove);
+  document.addEventListener('mouseup',   jcardDragUp);
+}
+
+function jcardDragMove(e) {
+  if (!_drag) return;
+  const b = jcardBlocks.find(b => b.id === _drag.id);
+  if (!b) return;
+  if (_drag.type === 'move') {
+    b.x = Math.round(_drag.origX + (e.clientX - _drag.startX));
+    b.y = Math.round(_drag.origY + (e.clientY - _drag.startY));
+    const el = document.querySelector(`.jcard-block[data-id="${b.id}"]`);
+    if (el) { el.style.left = b.x + 'px'; el.style.top = b.y + 'px'; }
+  } else if (_drag.type === 'resize') {
+    b.w = Math.max(40, Math.round(_drag.origW + (e.clientX - _drag.startX)));
+    b.h = Math.max(20, Math.round(_drag.origH + (e.clientY - _drag.startY)));
+    const el = document.querySelector(`.jcard-block[data-id="${b.id}"]`);
+    if (el) { el.style.width = b.w + 'px'; el.style.height = b.h + 'px'; }
+  } else if (_drag.type === 'rotate') {
+    const dx = e.clientX - _drag.cx;
+    const dy = e.clientY - _drag.cy;
+    const angle = Math.round(Math.atan2(dx, -dy) * 180 / Math.PI);
+    b.rot = angle;
+    const el = document.querySelector(`.jcard-block[data-id="${b.id}"]`);
+    if (el) el.style.transform = `rotate(${angle}deg)`;
+  }
+}
+
+function jcardDragUp() {
+  _drag = null;
+  document.removeEventListener('mousemove', jcardDragMove);
+  document.removeEventListener('mouseup',   jcardDragUp);
 }
 
 // ── Convert a blob: or http: URL to a base64 data URI for embedded saves ──
@@ -1595,101 +1878,102 @@ async function urlToDataUri(url) {
     return new Promise(resolve => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => resolve('');
+      reader.onerror  = () => resolve('');
       reader.readAsDataURL(blob);
     });
   } catch { return ''; }
 }
 
 async function saveJcardHtml() {
-  const title = document.getElementById('jcardTitle').value || 'mixtape';
-  const artUrl = appState.currentArtUrl || '';
+  const title   = document.getElementById('jcardTitle').value  || 'mixtape';
+  const fontEl  = document.getElementById('jcardFont');
+  const font    = fontEl ? fontEl.value : "'Arial Narrow', Arial, sans-serif";
+  const artUrl  = appState.currentArtUrl    || '';
+  const tmplUrl = appState.jcardTemplateUrl || '';
 
-  // Embed art as base64 so the saved file works without the original
-  let embeddedArt = '';
-  if (artUrl) embeddedArt = await urlToDataUri(artUrl);
+  const [embeddedArt, embeddedTemplate] = await Promise.all([
+    artUrl  ? urlToDataUri(artUrl)  : Promise.resolve(''),
+    tmplUrl ? urlToDataUri(tmplUrl) : Promise.resolve(''),
+  ]);
 
-  // Capture current overlay HTML (panel text nodes)
-  const overlayEl = document.getElementById('jcardOverlay');
-  const overlayHtml = overlayEl ? overlayEl.innerHTML : '';
+  // Google Font import for the chosen font
+  const webFontMap = { 'Caveat':'Caveat:wght@400;700', 'Dancing Script':'Dancing+Script:wght@400;700',
+    'Indie Flower':'Indie+Flower', 'Patrick Hand':'Patrick+Hand',
+    'Courier Prime':'Courier+Prime:wght@400;700', 'Oswald':'Oswald:wght@400;700' };
+  let fontImport = '';
+  for (const [name, param] of Object.entries(webFontMap)) {
+    if (font.includes(name)) {
+      fontImport = `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${param}&display=swap">`;
+      break;
+    }
+  }
 
-  // ── Saved file uses the same 6-panel proportions as the app ──────────────
-  // Print target: landscape ~7"×3.5" at 300dpi.  Screen preview: 900×446.
+  const content = jcardGetContent();
+
+  // Build block CSS + HTML for saved file (no drag handles, just final positions)
+  const blocksHtml = jcardBlocks.map(b => {
+    let innerStyle = b.type === 'sideA'
+      ? 'display:flex;flex-direction:column;height:100%;justify-content:space-between;'
+      : '';
+    return `<div style="position:absolute;left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;`
+      + `transform:rotate(${b.rot||0}deg);transform-origin:center center;`
+      + `overflow:hidden;box-sizing:border-box;font-family:${font}">
+      <div style="width:100%;height:100%;overflow:hidden;box-sizing:border-box;padding:3px 5px;${innerStyle}">
+        ${blockInnerHtml(b, content)}
+      </div></div>`;
+  }).join('\n');
+
   const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <title>${escHtml(title)} J-Card</title>
+${fontImport}
 <style>
 @media print {
-  @page { size: 7in 3.5in landscape; margin: 0; }
+  @page { size: 8.31in 4.13in landscape; margin: 0; }
   body  { margin: 0; padding: 0; background: #fff; }
-  .jcard-wrap { width: 7in !important; height: 3.5in !important; box-shadow: none !important; }
+  .jcard-wrap { width: 8.31in !important; height: 4.13in !important; box-shadow: none !important; }
 }
-body { margin: 0; padding: 24px; background: #666; display: flex;
-       justify-content: center; align-items: flex-start; min-height: 100vh;
-       font-family: 'Arial Narrow', Arial, sans-serif; box-sizing: border-box; }
-.jcard-wrap { position: relative; width: 900px; height: 446px;
-              background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.5);
-              overflow: hidden; border: 1px solid #999; box-sizing: border-box; }
-/* Art background — front panel only (25.2% → 56%) */
-.jcard-front-bg { position: absolute; left: 25.2%; width: 30.8%;
-                  top: 0; bottom: 0; overflow: hidden; pointer-events: none; }
-.jcard-front-bg img { width: 100%; height: 100%; object-fit: cover; opacity: .85; display: block; }
-/* Overlay */
-.jcard-overlay { position: absolute; inset: 0; pointer-events: none; }
-/* ── 6 panels ── */
-.jcard-p-lspine { position: absolute; left:0; width:7.2%; top:0; bottom:0;
-  border-right:1px dashed rgba(0,0,0,.35); display:flex; align-items:center;
-  justify-content:center; background:rgba(0,0,0,.03); box-sizing:border-box; }
-.jcard-p-lback  { position: absolute; left:7.2%; width:12%; top:0; bottom:0;
-  border-right:1px dashed rgba(0,0,0,.35); padding:8px 7px;
-  box-sizing:border-box; overflow:hidden; }
-.jcard-p-spine  { position: absolute; left:19.2%; width:6%; top:0; bottom:0;
-  border-right:1px dashed rgba(0,0,0,.35); display:flex; align-items:center;
-  justify-content:center; background:rgba(0,0,0,.04); box-sizing:border-box; }
-.jcard-p-front  { position: absolute; left:25.2%; width:30.8%; top:0; bottom:0;
-  border-right:1px solid rgba(0,0,0,.5); padding:10px 12px;
-  display:flex; flex-direction:column; justify-content:space-between;
-  box-sizing:border-box; }
-.jcard-p-rback  { position: absolute; left:56%; width:30.7%; top:0; bottom:0;
-  border-right:1px dashed rgba(0,0,0,.35); padding:10px 12px;
-  box-sizing:border-box; overflow:hidden; }
-.jcard-p-rflap  { position: absolute; left:86.7%; right:0; top:0; bottom:0;
-  padding:8px 7px; box-sizing:border-box; overflow:hidden; }
-/* Text styles */
-.jcard-spine-text { writing-mode:vertical-rl; transform:rotate(180deg);
-  font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-  white-space:nowrap; overflow:hidden; max-height:92%; text-overflow:ellipsis; color:#111; }
-.jcard-front-tracks { flex:1; overflow:hidden; padding-bottom:6px; }
-.jcard-front-meta { padding-top:5px; border-top:1px solid rgba(0,0,0,.15); }
-.jcard-panel-title  { font-size:12px; font-weight:700; color:#111; margin:0 0 1px;
-  line-height:1.2; text-shadow:0 1px 3px rgba(255,255,255,.8); }
-.jcard-panel-artist { font-size:8.5px; color:#333; margin:0; letter-spacing:.05em;
-  text-transform:uppercase; text-shadow:0 1px 2px rgba(255,255,255,.7); }
-.jcard-side-label { font-size:8px; font-weight:700; letter-spacing:.14em;
-  text-transform:uppercase; color:#555; margin:0 0 4px; padding-bottom:3px;
-  border-bottom:1px solid rgba(0,0,0,.18); }
-.jcard-tracklist { list-style:none; margin:0; padding:0; }
-.jcard-track { display:flex; gap:4px; font-size:9px; line-height:1.5; color:#222; overflow:hidden; }
-.jcard-track-num  { min-width:14px; color:#888; flex-shrink:0; }
-.jcard-track-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.jcard-track-dur  { color:#666; flex-shrink:0; font-size:8px; }
+body { margin: 0; padding: 24px; background: #555; display: flex;
+       flex-direction: column; align-items: center; min-height: 100vh;
+       font-family: ${font}; box-sizing: border-box; }
+.jcard-wrap { position: relative; width: 900px; height: 447px;
+              background: #e8e4dc; box-shadow: 0 4px 24px rgba(0,0,0,.5);
+              overflow: hidden; font-family: ${font}; }
+.jcard-tmpl { position: absolute; inset: 0; width: 100%; height: 100%;
+              object-fit: fill; display: block; pointer-events: none; }
+.jcard-cover-art { position: absolute; left: 25.18%; width: 30.82%;
+                   top: 0; bottom: 0; overflow: hidden; }
+.jcard-cover-art img { width: 100%; height: 100%; object-fit: cover; opacity: .82; display: block; }
+.jcard-side-label { font-size: 8px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: #555; margin: 0 0 4px; padding-bottom: 3px;
+  border-bottom: 1px solid rgba(0,0,0,.18); }
+.jcard-tracklist { list-style: none; margin: 0; padding: 0; }
+.jcard-track { display: flex; gap: 4px; line-height: 1.5; color: #222; overflow: hidden; }
+.jcard-track-num  { min-width: 14px; color: #888; flex-shrink: 0; }
+.jcard-track-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jcard-track-dur  { color: #666; flex-shrink: 0; }
+.jcard-panel-title { font-weight: 700; color: #111; margin: 0 0 2px; line-height: 1.2;
+  text-shadow: 0 1px 4px rgba(255,255,255,.9); }
+.jcard-panel-artist { color: #333; margin: 0; letter-spacing: .05em;
+  text-transform: uppercase; text-shadow: 0 1px 2px rgba(255,255,255,.8); }
+.jcard-spine-text { writing-mode: vertical-rl; transform: rotate(180deg);
+  font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; color: #111; display: block; height: 100%; }
 </style></head><body>
 <div class="jcard-wrap">
-  <div class="jcard-front-bg">
-    ${embeddedArt ? `<img src="${embeddedArt}" alt="tape art">` : ''}
-  </div>
-  <div class="jcard-overlay">${overlayHtml}</div>
+  ${embeddedTemplate ? `<img class="jcard-tmpl" src="${embeddedTemplate}" alt="">` : ''}
+  <div class="jcard-cover-art">${embeddedArt ? `<img src="${embeddedArt}" alt="">` : ''}</div>
+  ${blocksHtml}
 </div>
-<p style="color:#ccc;font-size:11px;margin-top:12px;text-align:center">
-  Print: File → Print → Paper size 7"×3.5" landscape, margins 0, scale 100%
+<p style="color:#ccc;font-size:11px;margin-top:14px;text-align:center">
+  Print: File → Print → Paper size 8.31"×4.13" landscape, margins 0
 </p>
 </body></html>`;
 
   if (window.electronAPI) {
     const result = await window.electronAPI.saveFile(
       title.replace(/\s+/g, '_') + '_jcard.html',
-      [{ name: 'HTML J-Card', extensions: ['html'] }],
-      html
+      [{ name: 'HTML J-Card', extensions: ['html'] }], html
     );
     if (result.saved) showToast('J-card saved: ' + result.path);
   } else {
@@ -1699,12 +1983,12 @@ body { margin: 0; padding: 24px; background: #666; display: flex;
     a.href = url; a.download = title.replace(/\s+/g, '_') + '_jcard.html';
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 3000);
-    showToast('J-card HTML saved — open it and File → Print (7"×3.5" landscape, no margins).');
+    showToast('J-card saved — open and File → Print (8.31"×4.13" landscape, no margins).');
   }
 }
 
 function saveJcardPng() {
-  showToast('Save as HTML, open it, then File → Print → Save as PDF (7"×3.5" landscape, no margins).');
+  showToast('Save as HTML, open it, then File → Print → Save as PDF (8.31"×4.13" landscape, no margins).');
 }
 
 // ═══════════════════════════════════════════════
