@@ -26,24 +26,41 @@
     "files": [
       "main.js",
       "preload.js",
-      "app/**/*"
+      "app/**/*",
+      "build/**/*"
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.ico"
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
-      "icon": "build/icon.icns",
+      "icon": "build/icon.png",
       "category": "public.app-category.music"
     },
     "linux": {
       "target": [
-        { "target": "AppImage", "arch": ["x64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build/icon.png",
       "category": "Audio"
@@ -54,6 +71,7 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "shortcutName": "Mixtape Helper"
-    }
+    },
+    "icon": "build/icon.png"
   }
 }
