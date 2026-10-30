@@ -6,10 +6,10 @@ on:
     tags:    ['v*']
   pull_request:
     branches: [main, master]
-  workflow_dispatch:   # allow manual runs from the Actions tab
+  workflow_dispatch:
 
 permissions:
-  contents: write      # needed to upload release assets
+  contents: write
 
 jobs:
   # ── Windows installer (.exe) ────────────────────────────────────────────────
@@ -96,32 +96,48 @@ jobs:
           path: dist/*.AppImage
           if-no-files-found: warn
 
-  # ── GitHub Release (only on version tags) ──────────────────────────────────
+  # ── Draft Release (runs on every push to main, and on version tags) ─────────
   release:
-    needs: build
+    name: Create Draft Release
+    needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    # Skip on pull requests — only run on actual pushes
+    if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: release-files
+          path: dist-all/
           merge-multiple: true
-      - name: Create draft release
+
+      - name: Set release tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=build-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete previous draft with same tag (if any)
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then TAG="${GITHUB_REF_NAME}";
-          elif [ -n "$INPUT_TAG" ]; then TAG="$INPUT_TAG";
-          else TAG="build-${GITHUB_RUN_NUMBER}"; fi
-          ls -la release-files
-          if gh release view "$TAG" --repo "$REPO" --json isDraft -q .isDraft 2>/dev/null | grep -q true; then
-            gh release delete "$TAG" --repo "$REPO" --yes
+          TAG="${{ steps.tag.outputs.tag }}"
+          if gh release view "$TAG" --repo "${{ github.repository }}" --json isDraft -q .isDraft 2>/dev/null | grep -q true; then
+            gh release delete "$TAG" --repo "${{ github.repository }}" --yes
           fi
-          gh release create "$TAG" release-files/* --repo "$REPO" --draft \
-            --target "${GITHUB_SHA}" --title "Internet Archive Download Manager ${TAG}" \
-            --notes "Windows (.zip), macOS (.zip) and Linux (.tar.gz) builds. Unzip and run InternetArchiveDownloadManager. No Python needed."
 
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "Mixtape Helper ${{ steps.tag.outputs.tag }}"
+          draft: true
+          generate_release_notes: true
+          target_commitish: ${{ github.sha }}
+          files: dist-all/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
