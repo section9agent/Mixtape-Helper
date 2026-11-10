@@ -72,6 +72,14 @@
       "uninstallerIcon": "build/icon.ico",
       "shortcutName": "Mixtape Helper"
     },
-    "icon": "build/icon.png"
+    "icon": "build/icon.png",
+    "publish": {
+      "provider": "github",
+      "owner": "section9agent",
+      "repo": "Mixtape-Helper"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
   }
 }
