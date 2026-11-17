@@ -381,15 +381,6 @@ function buildMenu(mainWin) {
         },
         { type: 'separator' },
         {
-          label: 'Tape Art Repros Site',
-          click: () => shell.openExternal('https://tapeartrepros.sergiostuff.com/'),
-        },
-        {
-          label: 'Discogs',
-          click: () => shell.openExternal('https://www.discogs.com/'),
-        },
-        { type: 'separator' },
-        {
           label: 'Donate via PayPal ♥',
           click: () => shell.openExternal('https://www.paypal.com/donate/?business=section9agent%40hotmail.com&currency_code=USD'),
         },

@@ -7,8 +7,8 @@ A standalone cassette mixtape planner, j-card designer, and Discogs track-time c
 ## Option A — Just use the HTML file (zero install)
 
 Open `mixtape-helper-standalone.html` in any web browser. No internet required for
-the core tools. (The Discogs tab and tape art catalog still need a connection when
-you actually fetch data from those external sites.)
+the core tools — the 63 built-in J-card templates are bundled inside the file.
+(The Discogs tab still needs a connection when it fetches release data.)
 
 ---
 
@@ -65,14 +65,33 @@ If the `build/` folder doesn't exist, electron-builder will use a default icon.
 
 ---
 
+## J-card templates
+
+The J-Card Designer ships with the scans in `JCards/JPEG`, plus a blank card and a
+“Choose your own image…” option. Cards are drawn and printed at their real size —
+print at **100% / Actual size** and cut along the grey outline.
+
+Each template's default text-box positions live in `JCards/layouts.json`. After
+adding or changing a template, rebuild the bundled data:
+
+```bash
+python3 scripts/build-templates.py   # → app/jcard-templates.js (needs Pillow)
+node scripts/build-standalone.js     # → mixtape-helper-standalone.html
+```
+
+---
+
 ## Project structure
 
 ```
-electron-app/
-├── main.js          ← Electron main process (window + IPC handlers)
-├── preload.js       ← Secure bridge: exposes save/open to the renderer
-├── package.json     ← npm scripts + electron-builder config
-├── README.md        ← This file
-└── app/
-    └── index.html   ← The entire app (self-contained, works in a browser too)
+mixtape-helper/
+├── main.js                 ← Electron main process (window, menus, IPC, updater)
+├── preload.js              ← Secure bridge: exposes save/open to the renderer
+├── package.json            ← npm scripts + electron-builder config
+├── app/
+│   ├── index.html          ← The app UI and logic
+│   └── jcard-templates.js  ← Built-in J-card templates (generated)
+├── JCards/                 ← Template scans (JPEG, PDF) and layouts.json
+├── scripts/                ← Template + standalone build scripts
+└── mixtape-helper-standalone.html  ← Single-file browser version (generated)
 ```

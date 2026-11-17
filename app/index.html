@@ -401,279 +401,32 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 :root[data-theme="dark"] .status-bar.error { background: #2A1010; border-color: #5A2020; color: #F07070; }
 
-/* ── J-CARD DESIGNER ── */
-/*
-  Standard 3-panel cassette J-card (National Audio Company spec):
-  Unfolded flat: 4.0" × 4.0" = 1200×1200px @ 300dpi
-  Display at 600×600px (50% scale for screen preview)
-
-  Panel layout (left → right, viewed from outside/front):
-  ┌──────────────────────────────┬────────┬───────────────┐
-  │  FRONT COVER (Side A art)    │ SPINE  │  BACK / Side B│
-  │  2.5" = 750px (62.5%)        │ 0.5"   │ 1.0" = 300px  │
-  │                              │ 150px  │ (25%)         │
-  │                              │(12.5%) │               │
-  └──────────────────────────────┴────────┴───────────────┘
-
-  The FRONT/SIDE-A panel is the large left panel (album art + title).
-  The SPINE is the vertical strip with the title rotated 90°.
-  The BACK panel holds the Side B tracklist.
-  When folded and inserted: spine faces out, front cover is visible.
-*/
-.jcard-preview-wrap {
-  overflow-x: auto;
-  margin-bottom: 16px;
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   J-CARD  —  free-placement text block system
-   Template image fills the canvas; text blocks are draggable,
-   resizable and rotatable so the user can align them to whatever
-   template they load.
-   ═══════════════════════════════════════════════════════════════ */
-
-/* Full-image canvas */
-.jcard-canvas-wrap {
-  position: relative;
-  width: 900px;
-  height: 447px;
-  background: #ccc;
-  font-family: var(--jcard-font, 'Arial Narrow', Arial, sans-serif);
-  box-shadow: 0 3px 18px rgba(0,0,0,0.35);
-  overflow: hidden;
-  flex-shrink: 0;
-  user-select: none;
-}
-.jcard-canvas-wrap.edit-mode {
-  cursor: default;
-}
-
-/* Layer 1: template image */
-.jcard-template-img {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-  object-fit: fill;
-  pointer-events: none;
-  display: block;
-}
-.jcard-no-template {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e8e4dc;
-  color: #888;
-  font-size: 13px;
-  font-style: italic;
-  pointer-events: none;
-}
-
-/* Layer 2: cover art (fixed to cover panel area, user positions text over it) */
-.jcard-cover-art {
-  position: absolute;
-  left: 25.18%; width: 30.82%;
-  top: 0; bottom: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.jcard-cover-art img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-  opacity: 0.82;
-}
-
-/* Layer 3: free-placement text blocks */
-.jcard-block {
-  position: absolute;
-  box-sizing: border-box;
-  cursor: move;
-  min-width: 24px;
-  min-height: 16px;
-}
-.jcard-block.selected {
-  outline: 1.5px dashed rgba(0,120,255,0.7);
-  outline-offset: 1px;
-}
-.jcard-block-inner {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
-  padding: 3px 5px;
-  pointer-events: none;
-}
-
-/* Resize handle — bottom-right corner */
-.jcard-resize-handle {
-  position: absolute;
-  right: -5px; bottom: -5px;
-  width: 12px; height: 12px;
-  background: #0078ff;
-  border-radius: 50%;
-  cursor: se-resize;
-  z-index: 10;
-  display: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-.jcard-block.selected .jcard-resize-handle { display: block; }
-
-/* Rotation handle — top-center */
-.jcard-rotate-handle {
-  position: absolute;
-  left: 50%; top: -18px;
-  transform: translateX(-50%);
-  width: 12px; height: 12px;
-  background: #00aa44;
-  border-radius: 50%;
-  cursor: grab;
-  z-index: 10;
-  display: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-.jcard-block.selected .jcard-rotate-handle { display: block; }
-
-/* Block toolbar — floats above selected block */
-.jcard-block-toolbar {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  display: none;
-  gap: 4px;
-  background: rgba(20,20,20,0.88);
-  border-radius: 5px;
-  padding: 3px 5px;
-  white-space: nowrap;
-  z-index: 20;
-  pointer-events: all;
-}
-.jcard-block.selected .jcard-block-toolbar { display: flex; }
-.jcard-block-toolbar button {
-  font-size: 10px; padding: 2px 6px;
-  background: rgba(255,255,255,0.12); border: none;
-  color: #fff; border-radius: 3px; cursor: pointer;
-  font-family: var(--font-ui, sans-serif);
-}
-.jcard-block-toolbar button:hover { background: rgba(255,255,255,0.25); }
-.jcard-block-toolbar input[type=number] {
-  width: 38px; font-size: 10px; padding: 2px 4px;
-  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
-  color: #fff; border-radius: 3px; text-align: center;
-  font-family: var(--font-ui, sans-serif);
-}
-
-/* Text styles inside blocks */
-.jcard-side-label {
-  font-size: 9px; font-weight: bold; letter-spacing: 0.14em;
-  text-transform: uppercase; color: #555; margin: 0 0 4px;
-  padding-bottom: 3px; border-bottom: 1px solid rgba(0,0,0,0.18);
-}
-.jcard-tracklist { list-style: none; margin: 0; padding: 0; }
-.jcard-track {
-  display: flex; gap: 4px; font-size: 9px;
-  line-height: 1.5; color: #222; overflow: hidden;
-}
-.jcard-track-num  { min-width: 14px; color: #888; flex-shrink: 0; }
-.jcard-track-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jcard-track-dur  { color: #666; flex-shrink: 0; font-size: 8px; }
-.jcard-panel-title {
-  font-size: 13px; font-weight: 700; color: #111;
-  margin: 0 0 2px; line-height: 1.2; word-break: break-word;
-  text-shadow: 0 1px 4px rgba(255,255,255,0.9);
-}
-.jcard-panel-artist {
-  font-size: 9px; color: #333; margin: 0;
-  letter-spacing: 0.05em; text-transform: uppercase;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
-}
-.jcard-spine-text {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; white-space: nowrap;
-  overflow: hidden; color: #111;
-  display: block; height: 100%;
-}
-
-/* Back/Side B tracklist */
-.jcard-side-label {
-  font-size: 9px;
-  font-weight: bold;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #555;
-  margin: 0 0 5px;
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(0,0,0,0.18);
-}
-.jcard-tracklist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.jcard-track {
-  display: flex;
-  gap: 4px;
-  font-size: 9.5px;
-  line-height: 1.55;
-  color: #222;
-  overflow: hidden;
-}
-.jcard-track-num { min-width: 16px; color: #888; flex-shrink: 0; }
-.jcard-track-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jcard-track-dur { color: #666; flex-shrink: 0; font-size: 8.5px; }
-
-.jcard-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
-.jcard-ctrl-group { display: flex; flex-direction: column; gap: 4px; }
-.jcard-ctrl-group label { font-size: 11px; margin: 0; }
-.jcard-ctrl-group input, .jcard-ctrl-group select { font-size: 13px; padding: 6px 8px; width: auto; min-width: 140px; }
-
-.tape-art-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 8px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 2px;
-}
-.tape-art-item {
-  border: 2px solid var(--border);
-  border-radius: 6px;
-  padding: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
-  background: var(--surface);
-}
-.tape-art-item:hover { border-color: var(--accent); }
-.tape-art-item.selected { border-color: var(--accent); background: var(--accent-bg); }
-.tape-art-item img {
-  width: 100%;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 3px;
-  display: block;
-  margin-bottom: 4px;
+/* ── J-CARD DESIGNER ── (card styles live in JC_CSS in the script) */
+.jc-stage {
+  overflow: auto;
+  padding: 16px;
   background: var(--bg3);
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
 }
-.tape-art-item .art-name {
-  font-size: 10px;
-  color: var(--fg2);
-  line-height: 1.3;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.jc-stage .jc-card { box-shadow: 0 3px 18px rgba(0,0,0,0.35); }
+.jc-card.editing .jc-block { cursor: move; outline: 1px dashed rgba(0,120,255,0.35); }
+.jc-card.editing .jc-block:hover { outline-color: rgba(0,120,255,0.75); }
+.jc-card.editing .jc-block.selected { outline: 2px solid #0078ff; background: rgba(0,120,255,0.07); }
+.jc-resize {
+  position: absolute; right: -1px; bottom: -1px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #0078ff; cursor: se-resize; display: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
-.tape-art-loading {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 20px;
-  color: var(--fg3);
-  font-size: 13px;
+.jc-block.selected .jc-resize { display: block; }
+.jc-toolbar {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  min-height: 36px; margin-bottom: 10px; padding: 6px 10px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
 }
+.jc-toolbar button { font-size: 12px; padding: 4px 10px; }
 
 /* ── DISCOGS ── */
 .disc-tabs { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
@@ -810,7 +563,16 @@ textarea.paste-area {
         <input type="text" id="jcardYear" value="" style="max-width:100px" oninput="renderJcard()">
       </div>
     </div>
-    <div class="row mb8">
+    <div class="row mb8" style="align-items:flex-end">
+      <div style="flex:2">
+        <label for="jcardTemplateSel">J-card template</label>
+        <div style="display:flex;gap:6px">
+          <button onclick="jcStepTemplate(-1)" title="Previous template" style="flex-shrink:0">◀</button>
+          <select id="jcardTemplateSel" onchange="jcSelectTemplate(this.value)" style="flex:1;min-width:0"></select>
+          <button onclick="jcStepTemplate(1)" title="Next template" style="flex-shrink:0">▶</button>
+        </div>
+        <input type="file" id="jcardTemplateInput" accept="image/*" style="display:none" onchange="loadJcardTemplate(this)">
+      </div>
       <div>
         <label for="jcardFont">Font style</label>
         <select id="jcardFont" onchange="renderJcard()">
@@ -828,105 +590,34 @@ textarea.paste-area {
           </optgroup>
         </select>
       </div>
-      <div>
-        <label for="jcardTemplateInput">J-card template image</label>
-        <input type="file" id="jcardTemplateInput" accept="image/*" style="width:100%;padding:4px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--fg);font-size:12px;cursor:pointer" onchange="loadJcardTemplate(this)">
-      </div>
     </div>
-    <div class="hint">Track list is read from the Mixtape Planner. Load a playlist there first.</div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 14px;margin-top:10px;font-size:12px;line-height:1.7">
-      <strong>Where to get J-card template images:</strong><br>
-      • <a href="https://www.cassetteking.com/how-to-create-cassette-j-cards/" target="_blank" rel="noopener" style="color:var(--accent)">cassetteking.com</a> — tutorials and downloadable blank templates<br>
-      • <a href="https://tapeartrepros.sergiostuff.com" target="_blank" rel="noopener" style="color:var(--accent)">tapeartrepros.sergiostuff.com</a> — high-res reproductions of real cassette J-cards<br>
-      • Search <strong>Discogs</strong> for your cassette release — click the image to download artwork at full resolution<br>
-      <span style="color:var(--fg3)">Save the image to your computer, then load it with the file picker above. The default text block positions match a standard 3-panel layout (back flap · spine · cover · insert). Drag, resize, or rotate any block to line it up with your template's fold marks.</span>
-    </div>
-  </div>
-
-  <div class="card mb16">
-    <div class="card-title">Tape Art</div>
-
-    <!-- WHERE TO GET IMAGES -->
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6">
-      <strong>Where to download tape art images:</strong><br>
-      Visit <a href="https://tapeartrepros.sergiostuff.com" target="_blank" rel="noopener" style="color:var(--accent)">tapeartrepros.sergiostuff.com</a> — a library of high-resolution cassette J-card reproductions.
-      Download the images you want, then save them into a dedicated folder on your computer (e.g. <code>tape-art/</code>).<br>
-      <strong>File naming tip:</strong> name each file after the cassette type so the app can label it automatically, e.g.
-      <code>TDK-SA-X-C90.jpg</code>, <code>Maxell-XLII-90-1985.jpg</code>, <code>Sony-Metal-C60.jpg</code>.
-    </div>
-
-    <!-- LOCAL FOLDER (primary method) -->
-    <div style="margin-bottom:14px">
-      <label style="margin-bottom:6px;font-weight:600">Load your tape-art folder</label>
-      <div class="row" style="align-items:flex-end;gap:10px">
-        <div style="flex:1">
-          <input type="file" id="artFolderInput" multiple accept="image/*" style="width:100%;padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--fg);font-size:13px;cursor:pointer">
-        </div>
-        <div class="shrink"><button onclick="clearArt()">Clear Art</button></div>
-      </div>
-      <p class="hint">Select all the image files from your <code>tape-art/</code> folder. The cassette type label is derived from the file name automatically.</p>
-    </div>
-
-    <!-- FILTER / SEARCH row -->
-    <div class="row mb8">
-      <div>
-        <label for="artTypeFilter">Filter by cassette type</label>
-        <select id="artTypeFilter" onchange="filterArtGrid()">
-          <option value="">All tapes</option>
-        </select>
-      </div>
-      <div>
-        <label for="artSearchInput">Search by name</label>
-        <input type="text" id="artSearchInput" placeholder="e.g. SA-X, XLII, Metal" oninput="filterArtGrid()">
-      </div>
-    </div>
-
-    <div id="artStatus" class="hint" style="margin-bottom:8px">No images loaded yet — choose your tape-art folder above.</div>
-    <div class="tape-art-grid" id="tapeArtGrid"></div>
-
-    <!-- MANUAL URL / ONLINE fallback -->
-    <details style="margin-top:12px">
-      <summary style="font-size:12px;color:var(--fg2);cursor:pointer;user-select:none">▸ Use an image URL directly (advanced)</summary>
-      <div style="margin-top:8px">
-        <div class="row" style="align-items:flex-end">
-          <div style="flex:1">
-            <label style="font-size:11px">Image URL</label>
-            <input type="text" id="customArtUrl" placeholder="https://…/image.jpg" oninput="applyCustomArt()">
-          </div>
-        </div>
-        <div class="row" style="margin-top:8px;align-items:flex-end">
-          <div class="shrink">
-            <button onclick="loadTapeArtCatalog()" id="loadArtBtn">Try fetching from tapeartrepros.sergiostuff.com</button>
-          </div>
-        </div>
-        <p class="hint">Direct fetching is often blocked by CORS. Using a local folder (above) is recommended.</p>
-      </div>
-    </details>
+    <div class="hint">Track list is read from the Mixtape Planner. Pick one of the built-in cassette J-cards, a blank card, or “Choose your own image…” at the bottom of the list.</div>
   </div>
 
   <div style="margin-bottom:8px" id="jcardTapeNav"></div>
 
   <div class="card mb16">
-    <div class="card-title">J-Card Preview</div>
-    <div class="jcard-preview-wrap">
-      <div style="overflow-x:auto">
-      <div class="jcard-canvas-wrap edit-mode" id="jcardCanvas" onclick="jcardCanvasClick(event)">
-        <!-- Layer 1: template image -->
-        <img class="jcard-template-img" id="jcardTemplateImg" src="" alt="" style="display:none">
-        <div class="jcard-no-template" id="jcardNoTemplate">Load a J-card template image above</div>
-        <!-- Layer 2: tape art (cover panel area) -->
-        <div class="jcard-cover-art" id="jcardCoverArt"></div>
-        <!-- Layer 3: free-placement text blocks injected here by JS -->
-      </div>
-      </div>
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <span>J-Card Preview</span>
+      <span id="jcardSizeInfo" style="font-size:11px;font-weight:400;color:var(--fg3);text-transform:none;letter-spacing:0"></span>
     </div>
+    <div id="jcardBlockBar" class="jc-toolbar"></div>
+    <div class="jc-stage" id="jcardStage" onmousedown="jcardStageMousedown(event)"></div>
     <p class="hint" style="margin-top:6px">
-      Click a text block to select it, then drag to move · corner dot to resize · green dot to rotate.
-      Load your J-card template above — text blocks snap to default positions or drag them anywhere to match your template's lines.
+      Drag a text box to move it · blue corner dot to resize · rotate and size from the bar above.
+      Text size is automatic (it follows the template’s ruled lines) unless you type a size.
     </p>
-    <div class="flex-end mt8">
+    <div class="flex-end mt8" style="flex-wrap:wrap">
+      <select id="jcardAddSel" onchange="jcAddBlock(this.value)" style="width:auto">
+        <option value="">＋ Add text box…</option>
+        <option value="spine">Title / spine</option>
+        <option value="sideA">Side A track list</option>
+        <option value="sideB">Side B track list</option>
+      </select>
       <button onclick="resetJcardLayout()">↺ Reset layout</button>
       <button onclick="saveJcardHtml()">⬇ Save as HTML</button>
+      <button id="jcardPrintAllBtn" onclick="printJcard(true)" style="display:none">🖨 Print all tapes</button>
+      <button class="primary" onclick="printJcard(false)">🖨 Print J-card</button>
     </div>
   </div>
 
@@ -983,6 +674,7 @@ textarea.paste-area {
 </div>
 </section>
 
+<script src="jcard-templates.js"></script>
 <script>
 // ═══════════════════════════════════════════════
 //  SHARED STATE
@@ -991,12 +683,7 @@ let appState = {
   tracks: [],          // [{position, title, duration (secs|null), artist}]
   tapeMinutes: 90,
   splits: [],          // [{tapeNum, sideA: [track,...], sideB: [track,...]}]
-  selectedArt: null,   // {name, previewUrl, pageUrl}
-  artCatalog: [],      // [{name, brand, year, length, previewUrl, pageUrl}]
-  artLoaded: false,
   currentJcardTape: 0,
-  jcardTemplateUrl: '',  // blob URL for loaded template image
-  currentArtUrl: '',     // blob URL for current tape art
 };
 
 // ═══════════════════════════════════════════════
@@ -1403,345 +1090,239 @@ function saveSidePlaylist(tapeNum, side) {
 }
 
 // ═══════════════════════════════════════════════
-//  TAPE ART — LOCAL FOLDER SCANNER
+//  J-CARD DESIGNER
+//  The card is drawn at its real physical size (inches). Block positions are
+//  stored as fractions of the card, font sizes in points, so the on-screen
+//  editor and the printout always match.
 // ═══════════════════════════════════════════════
 
-// Wire up the folder input
-document.getElementById('artFolderInput').addEventListener('change', function(e) {
-  const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
-  if (!files.length) return;
+// Blank 4-panel J-card (back flap · spine · cover · inside flap), unfolded,
+// shown the same way the built-in templates are scanned (4" tall).
+const JC_BLANK = (() => {
+  const w = 6.2, h = 4.0, f = [0.65, 1.15, 3.7];
+  return {
+    id: '__none', name: 'None (blank J-card)', blank: true, src: '',
+    wIn: w, hIn: h, rot: -90, pitchIn: null, folds: f,
+    T: [(f[0] + 0.06) / w, 0.06 / h, (f[1] - f[0] - 0.12) / w, 3.88 / h],
+    A: [(f[1] + 0.08) / w, 0.06 / h, (f[2] - f[1] - 0.16) / w, 3.88 / h],
+    B: [(f[2] + 0.08) / w, 0.06 / h, (w - f[2] - 0.16) / w, 3.88 / h],
+  };
+})();
 
-  const status = document.getElementById('artStatus');
-  status.textContent = `Loading ${files.length} image${files.length!==1?'s':''}…`;
+const jc = {
+  template: JC_BLANK,
+  custom: null,        // user-chosen template object
+  blocks: [],
+  layouts: {},         // template id → blocks (keeps edits when switching)
+  selected: null,
+  ppi: 140,            // screen pixels per inch in the editor
+};
 
-  const catalog = [];
-  let loaded = 0;
+function jcTemplateList() {
+  const list = [JC_BLANK, ...(window.JCARD_TEMPLATES || [])];
+  if (jc.custom) list.push(jc.custom);
+  return list;
+}
 
-  files.forEach(file => {
-    const objectUrl = URL.createObjectURL(file);
-    // Derive cassette name from filename: strip extension, replace dashes/underscores
-    const raw = file.name.replace(/\.[^.]+$/, '');
-    const name = raw.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim();
-    const brand = inferBrand(name);
-    const length = inferLength(name);
-    const year = inferYear(name);
-
-    catalog.push({ name, brand, year, length, previewUrl: objectUrl, pageUrl: '' });
-    loaded++;
-    if (loaded === files.length) {
-      appState.artCatalog = catalog;
-      appState.artLoaded = true;
-      rebuildTypeFilter(catalog);
-      status.textContent = `Loaded ${catalog.length} tape${catalog.length!==1?'s':''} from local folder.`;
-      renderArtGrid(catalog);
-    }
+function jcDefaultBlocks(t) {
+  const mk = (id, type, r, label) => ({
+    id, type, label, x: r[0], y: r[1], w: r[2], h: r[3],
+    rot: t.rot, fontPt: null, color: '#111111', header: !!t.blank,
   });
-});
-
-function inferBrand(name) {
-  const brands = ['TDK','Maxell','Sony','BASF','Denon','Nakamichi','Fuji','Philips','Memorex','Aiwa','JVC','Sanyo','Samsung','Grundig','RAKS','Laser','3M','Agfa','Thats','Shape','Scotch'];
-  for (const b of brands) if (name.toLowerCase().includes(b.toLowerCase())) return b;
-  return '';
-}
-function inferYear(name) { const m = name.match(/\b(19\d{2}|20\d{2})\b/); return m ? m[1] : ''; }
-function inferLength(name) { const m = name.match(/\bC[-–]?(\d+)\b/i); return m ? 'C' + m[1] : ''; }
-
-// Cassette MODEL name for the dropdown: use the full file-derived name
-// e.g. "Tdk Sa X C90 1984" — trimmed of year if present
-function inferModelName(item) {
-  // Remove year in parentheses or bare 4-digit year from the display name
-  return item.name.replace(/\s*\(?(19|20)\d{2}\)?\s*/g, '').trim() || item.name;
+  return [
+    mk('title', 'spine', t.T, 'Title / spine'),
+    mk('sideA', 'sideA', t.A, 'Side A'),
+    mk('sideB', 'sideB', t.B, 'Side B'),
+  ];
 }
 
-function rebuildTypeFilter(catalog) {
-  const sel = document.getElementById('artTypeFilter');
-  // Keep "All tapes" first option
-  sel.innerHTML = '<option value="">All tapes</option>';
-
-  // Build unique sorted list of model names
-  const names = [...new Set(catalog.map(t => inferModelName(t)))].sort();
-  names.forEach(n => {
-    const o = document.createElement('option');
-    o.value = n;
-    o.textContent = n;
-    sel.appendChild(o);
+// ── Template selection ──────────────────────────────────────────────────────
+function jcBuildTemplateSelect() {
+  const sel = document.getElementById('jcardTemplateSel');
+  if (!sel) return;
+  const groups = {};
+  (window.JCARD_TEMPLATES || []).forEach(t => (groups[t.brand] = groups[t.brand] || []).push(t));
+  let h = `<option value="__none">None (blank J-card)</option>`;
+  Object.keys(groups).sort((a, b) => a.localeCompare(b)).forEach(b => {
+    h += `<optgroup label="${escHtml(b)}">` +
+      groups[b].map(t => `<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`).join('') +
+      `</optgroup>`;
   });
+  h += `<optgroup label="Your own">`;
+  if (jc.custom) h += `<option value="__custom">${escHtml(jc.custom.name)}</option>`;
+  h += `<option value="__choose">Choose your own image…</option></optgroup>`;
+  sel.innerHTML = h;
+  sel.value = jc.template.id;
 }
 
-function filterArtGrid() {
-  if (!appState.artLoaded) return;
-  const typeFilter = document.getElementById('artTypeFilter').value.toLowerCase();
-  const search = document.getElementById('artSearchInput').value.toLowerCase();
-  const filtered = appState.artCatalog.filter(t => {
-    const model = inferModelName(t).toLowerCase();
-    if (typeFilter && !model.includes(typeFilter)) return false;
-    if (search && !t.name.toLowerCase().includes(search)) return false;
-    return true;
-  });
-  renderArtGrid(filtered);
-}
-
-function renderArtGrid(items) {
-  const grid = document.getElementById('tapeArtGrid');
-  if (!items.length) {
-    grid.innerHTML = '<div class="tape-art-loading">No tapes match. Load images from a folder above.</div>';
+function jcSelectTemplate(id) {
+  if (id === '__choose') {
+    document.getElementById('jcardTemplateSel').value = jc.template.id;
+    document.getElementById('jcardTemplateInput').click();
     return;
   }
-  let html = '';
-  items.forEach((item, i) => {
-    const sel = appState.selectedArt && appState.selectedArt.name === item.name ? ' selected' : '';
-    html += `<div class="tape-art-item${sel}" onclick="selectArtByIndex(${i})" title="${escHtml(item.name)}">
-      <img src="${escHtml(item.previewUrl || '')}" alt="${escHtml(item.name)}"
-           onerror="this.style.background='var(--bg3)';this.removeAttribute('src')">
-      <div class="art-name">${escHtml(inferModelName(item))}</div>
-    </div>`;
-  });
-  grid.innerHTML = html;
-  grid._items = items;
+  const t = jcTemplateList().find(t => t.id === id);
+  if (!t) return;
+  jc.layouts[jc.template.id] = jc.blocks;
+  jc.template = t;
+  jc.blocks = jc.layouts[t.id] || jcDefaultBlocks(t);
+  jc.selected = null;
+  document.getElementById('jcardTemplateSel').value = t.id;
+  renderJcard();
 }
 
-function selectArtByIndex(idx) {
-  const grid = document.getElementById('tapeArtGrid');
-  const items = grid._items;
-  if (!items || !items[idx]) return;
-  appState.selectedArt = items[idx];
-  renderArtGrid(items);
-  applyArtToJcard(items[idx].previewUrl);
-  const urlField = document.getElementById('customArtUrl');
-  if (urlField) urlField.value = '';
-}
-
-function applyArtToJcard(url) {
-  // Set art on the Cover panel only (layer 2)
-  const coverArt = document.getElementById('jcardCoverArt');
-  if (!coverArt) return;
-  if (url) {
-    coverArt.innerHTML = `<img src="${escHtml(url)}" alt="tape art" onerror="this.parentNode.innerHTML=''">`;
-  } else {
-    coverArt.innerHTML = '';
-  }
-  appState.currentArtUrl = url || '';
-}
-
-function applyCustomArt() {
-  const url = document.getElementById('customArtUrl').value.trim();
-  appState.selectedArt = null;
-  renderArtGrid(appState.artCatalog);
-  applyArtToJcard(url);
-}
-
-function clearArt() {
-  appState.selectedArt = null;
-  appState.currentArtUrl = '';
-  const urlField = document.getElementById('customArtUrl');
-  if (urlField) urlField.value = '';
-  applyArtToJcard('');
-  renderArtGrid(appState.artCatalog);
-}
-
-// ── Online catalog fallback (moved to secondary) ──────────────────────────────
-async function loadTapeArtCatalog() {
-  const btn = document.getElementById('loadArtBtn');
-  const status = document.getElementById('artStatus');
-  btn.disabled = true;
-  btn.textContent = 'Loading…';
-  status.textContent = 'Trying tapeartrepros.sergiostuff.com…';
-
-  try {
-    const BASE = 'https://tapeartrepros.sergiostuff.com';
-    const resp = await fetch(`${BASE}/category/tapes/`, { signal: AbortSignal.timeout(8000) });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const html = await resp.text();
-
-    const catalog = [];
-    const re = /<a[^>]+href="(https:\/\/tapeartrepros\.sergiostuff\.com\/[^"]+\/)"[^>]*>\s*<img[^>]+src="([^"]+)"[^>]*>/gi;
-    let m;
-    while ((m = re.exec(html)) !== null) {
-      const pageUrl = m[1], imgUrl = m[2];
-      const slug = pageUrl.replace(/\/$/, '').split('/').pop();
-      const name = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      catalog.push({ name, brand: inferBrand(name), year: inferYear(name), length: inferLength(name), previewUrl: imgUrl, pageUrl });
-    }
-    if (!catalog.length) throw new Error('No tapes parsed from page');
-
-    appState.artCatalog = catalog;
-    appState.artLoaded = true;
-    rebuildTypeFilter(catalog);
-    status.textContent = `Loaded ${catalog.length} tapes from site.`;
-    btn.textContent = 'Reload'; btn.disabled = false;
-    renderArtGrid(catalog);
-  } catch(e) {
-    status.textContent = 'Site unreachable or blocked by CORS. Use the local folder method above.';
-    btn.textContent = 'Retry'; btn.disabled = false;
-  }
-}
-
-// ═══════════════════════════════════════════════
-//  J-CARD — FREE-PLACEMENT ENGINE
-//  Each text block is a draggable, resizable,
-//  rotatable element over the template image.
-// ═══════════════════════════════════════════════
-
-// Block state: array of {id, type, x, y, w, h, rot, fontSize, color}
-// Positions/sizes stored as px (canvas is 900×447)
-let jcardBlocks = [];
-let jcardSelectedId = null;
-
-// Default block layout (measured from template, expressed as px on 900×447 canvas)
-// Coordinates derived from PSD (2494×1238) scaled to app canvas (900×447)
-// Scale factors: x*900/2494, y*447/1238
-// PSD layers: Back Flap (176,15,303×1205), Spine (475,15,156×1205),
-//   Cover (628,15,771×1205), Cover Side A Text (628,616,771×605),
-//   Cover Side B Text (627,18,771×605),
-//   Inside Flap (1395,15,768×1205), Inside Flap Side A Text (1392,616,771×605),
-//   Inside Flap Side B Text (1392,18,771×605)
-// Side A & B blocks rotated 90° per user instruction
-function jcardDefaultLayout() {
-  return [
-    // Back flap — spine text, runs full height, no rotation
-    { id: 'backflap',   type: 'spine',  label: 'Back Flap (spine text)',
-      x: 64,  y: 5,   w: 109, h: 435, rot: 0,   fontSize: 10, color: '#111' },
-    // Spine — vertical text strip
-    { id: 'spine',      type: 'spine',  label: 'Spine',
-      x: 171, y: 5,   w: 56,  h: 435, rot: 0,   fontSize: 10, color: '#111' },
-    // Cover panel — Side A tracklist (bottom half of cover, rotated 90°)
-    { id: 'coverSideA', type: 'sideA',  label: 'Cover – Side A',
-      x: 227, y: 222, w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
-    // Cover panel — Side B tracklist (top half of cover, rotated 90°)
-    { id: 'coverSideB', type: 'sideB',  label: 'Cover – Side B',
-      x: 226, y: 7,   w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
-    // Inside flap — Side A tracklist (bottom half, rotated 90°)
-    { id: 'insertSideA',type: 'sideA',  label: 'Insert – Side A',
-      x: 502, y: 222, w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
-    // Inside flap — Side B tracklist (top half, rotated 90°)
-    { id: 'insertSideB',type: 'sideB',  label: 'Insert – Side B',
-      x: 502, y: 7,   w: 278, h: 218, rot: 90,  fontSize: 9,  color: '#111' },
-  ];
+function jcStepTemplate(dir) {
+  const ids = Array.from(document.getElementById('jcardTemplateSel').options)
+    .map(o => o.value).filter(v => v !== '__choose');
+  const i = ids.indexOf(jc.template.id);
+  jcSelectTemplate(ids[(i + dir + ids.length) % ids.length]);
 }
 
 function loadJcardTemplate(input) {
   const file = input.files && input.files[0];
+  input.value = '';
   if (!file) return;
-  if (appState.jcardTemplateUrl && appState.jcardTemplateUrl.startsWith('blob:')) {
-    URL.revokeObjectURL(appState.jcardTemplateUrl);
-  }
-  const url = URL.createObjectURL(file);
-  appState.jcardTemplateUrl = url;
-  const img = document.getElementById('jcardTemplateImg');
-  const noTmpl = document.getElementById('jcardNoTemplate');
-  if (img) { img.src = url; img.style.display = 'block'; }
-  if (noTmpl) noTmpl.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      // A J-card is 4" along the cassette's length; assume the image is
+      // oriented like the built-in scans (4" tall).
+      const hIn = 4.0, wIn = +(4.0 * img.naturalWidth / img.naturalHeight).toFixed(3);
+      const x0 = wIn >= 3.6 ? 1.15 / wIn : 0.3;
+      const cw = Math.min(2.35 / wIn, 0.95 - x0);
+      jc.custom = {
+        id: '__custom', name: 'Your image: ' + file.name, src: reader.result,
+        wIn, hIn, rot: -90, pitchIn: null,
+        T: [Math.max(0.01, x0 - 0.45 / wIn), 0.02, 0.38 / wIn, 0.96],
+        A: [x0, 0.52, cw, 0.46],
+        B: [x0, 0.02, cw, 0.46],
+      };
+      delete jc.layouts.__custom;
+      jcBuildTemplateSelect();
+      jcSelectTemplate('__custom');
+      showToast('Template loaded — drag the text boxes onto its lines if needed.');
+    };
+    img.onerror = () => showToast('Could not read that image file.');
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
 }
 
-function jcardGetContent() {
+// ── Content ────────────────────────────────────────────────────────────────
+function jcardGetContent(tapeIdx) {
   const title  = document.getElementById('jcardTitle').value  || 'My Mixtape';
   const artist = document.getElementById('jcardArtist').value || '';
   const year   = document.getElementById('jcardYear').value   || '';
   const splits = appState.splits;
-  const tape   = splits[appState.currentJcardTape] || null;
+  const idx    = tapeIdx ?? appState.currentJcardTape;
+  const tape   = splits[idx] || null;
   const sideA  = tape ? tape.sideA : appState.tracks.slice(0, Math.ceil(appState.tracks.length / 2));
   const sideB  = tape ? tape.sideB : appState.tracks.slice(Math.ceil(appState.tracks.length / 2));
-  const tapeLabel = splits.length > 1 ? `Tape ${appState.currentJcardTape + 1} — ` : '';
+  const tapeLabel = splits.length > 1 ? `Tape ${idx + 1} — ` : '';
   const spineText = `${tapeLabel}${title}${artist ? ' · ' + artist : ''}${year ? ' · ' + year : ''}`;
   return { title, artist, year, sideA, sideB, spineText };
 }
 
-function trackListHtml(tracks, sideLabel, fontSize) {
-  const fs = fontSize || 9;
-  if (!tracks.length) return `<div style="color:rgba(0,0,0,0.35);font-size:${fs}px;font-style:italic">No tracks loaded</div>`;
-  return `<div class="jcard-side-label" style="font-size:${fs-1}px">Side ${sideLabel}</div>
-    <ul class="jcard-tracklist">${tracks.map((t, i) => `<li class="jcard-track" style="font-size:${fs}px">
-      <span class="jcard-track-num">${i + 1}.</span>
-      <span class="jcard-track-name">${escHtml(t.title)}</span>
-      ${t.duration !== null ? `<span class="jcard-track-dur">${formatDur(t.duration)}</span>` : ''}
-    </li>`).join('')}</ul>`;
+// Physical metrics for a block: line height (in) and font size (pt).
+function jcMetrics(b, t, content, noShare) {
+  const bw = b.w * t.wIn, bh = b.h * t.hIn;
+  const turned = Math.abs(b.rot) % 180 === 90;
+  const along  = turned ? bh : bw;     // direction the text runs
+  const across = turned ? bw : bh;     // direction lines stack
+  if (b.type === 'spine') {
+    const chars = Math.max(8, content.spineText.length);
+    let pt = Math.min(across * 72 * 0.6, (along - 0.12) * 72 / (0.62 * chars), 16);
+    if (b.fontPt) pt = b.fontPt;
+    return { along, across, lh: across, pt: Math.max(4.5, pt) };
+  }
+  const tracks = b.type === 'sideA' ? content.sideA : content.sideB;
+  const n = Math.max(1, tracks.length) + (b.header ? 1 : 0);
+  let lh = (t.pitchIn && n * t.pitchIn <= across + 0.02) ? t.pitchIn : across / n;
+  lh = Math.min(lh, 0.25);
+  let pt = Math.min(Math.max(lh * 72 * 0.62, 4), 11);
+  if (b.fontPt) { pt = b.fontPt; lh = Math.max(lh, pt * 1.15 / 72); }
+  else if (!noShare) {
+    // Keep both sides' automatic text the same size (the smaller one wins);
+    // each side keeps its own line spacing so it stays on the ruled lines.
+    jc.blocks.forEach(o => {
+      if (o !== b && !o.fontPt && o.type !== 'spine') pt = Math.min(pt, jcMetrics(o, t, content, true).pt);
+    });
+  }
+  return { along, across, lh, pt };
 }
 
-function blockInnerHtml(block, content) {
-  const { type, fontSize, color } = block;
-  const fs = fontSize || 9;
-  const col = color || '#111';
-  if (type === 'spine') {
-    return `<span class="jcard-spine-text" style="font-size:${fs}px;color:${col}">${escHtml(content.spineText)}</span>`;
-  }
-  if (type === 'sideA') {
-    return `${trackListHtml(content.sideA, 'A', fs)}
-      <div style="margin-top:auto;padding-top:5px;border-top:1px solid rgba(0,0,0,0.18)">
-        <div class="jcard-panel-title" style="font-size:${fs+4}px;color:${col}">${escHtml(content.title)}</div>
-        ${content.artist ? `<div class="jcard-panel-artist" style="font-size:${fs-1}px;color:${col}">${escHtml(content.artist)}${content.year ? ' · ' + escHtml(content.year) : ''}</div>` : ''}
-      </div>`;
-  }
-  if (type === 'sideB') {
-    return trackListHtml(content.sideB, 'B', fs);
-  }
-  return '';
+// Build the card markup. mode 'edit' → pixels for the on-screen editor,
+// mode 'print' → real inches/points for printing.
+function jcCardHtml(mode, tapeIdx) {
+  const t = jc.template, ppi = jc.ppi, edit = mode === 'edit';
+  const L = v => edit ? (v * ppi).toFixed(2) + 'px' : v.toFixed(4) + 'in';
+  const F = pt => edit ? (pt * ppi / 72).toFixed(2) + 'px' : pt.toFixed(2) + 'pt';
+  const content = jcardGetContent(tapeIdx);
+  const font = document.getElementById('jcardFont').value;
+
+  let h = `<div class="jc-card${edit ? ' editing' : ''}" id="${edit ? 'jcardCanvas' : ''}"
+    style="width:${L(t.wIn)};height:${L(t.hIn)};font-family:${font.replace(/"/g, "'")}">`;
+  if (t.src) h += `<img class="jc-tmpl" src="${t.src}" alt="" draggable="false">`;
+  if (t.folds) t.folds.forEach(f => { h += `<div class="jc-fold" style="left:${(f / t.wIn * 100).toFixed(3)}%"></div>`; });
+
+  jc.blocks.forEach(b => {
+    const m = jcMetrics(b, t, content);
+    const pad = 0.035;
+    let inner = '';
+    if (b.type === 'spine') {
+      inner = `<div class="jc-spine" style="font-size:${F(m.pt)};padding:0 ${L(pad)}"><span>${escHtml(content.spineText)}</span></div>`;
+    } else {
+      const tracks = b.type === 'sideA' ? content.sideA : content.sideB;
+      const row = `height:${L(m.lh)};line-height:${L(m.lh)};font-size:${F(m.pt)};padding:0 ${L(pad)} ${L(m.lh * 0.1)}`;
+      if (b.header) inner += `<div class="jc-row jc-head" style="${row}">Side ${b.type === 'sideA' ? 'A' : 'B'}</div>`;
+      if (!tracks.length) {
+        inner += `<div class="jc-row" style="${row};opacity:.45;font-style:italic">${edit ? 'Load tracks in the Mixtape Planner' : ''}</div>`;
+      }
+      tracks.forEach((tr, i) => {
+        inner += `<div class="jc-row" style="${row}"><span class="jc-num">${i + 1}.</span>` +
+          `<span class="jc-name">${escHtml(tr.title)}</span>` +
+          (tr.duration !== null && tr.duration !== undefined ? `<span class="jc-dur">${formatDur(tr.duration)}</span>` : '') +
+          `</div>`;
+      });
+    }
+    const sel = edit && b.id === jc.selected ? ' selected' : '';
+    h += `<div class="jc-block${sel}" data-id="${b.id}" style="left:${(b.x * 100).toFixed(3)}%;top:${(b.y * 100).toFixed(3)}%;width:${(b.w * 100).toFixed(3)}%;height:${(b.h * 100).toFixed(3)}%">` +
+      `<div class="jc-rot" style="width:${L(m.along)};height:${L(m.across)};transform:translate(-50%,-50%) rotate(${b.rot}deg);color:${b.color}">${inner}</div>` +
+      (edit ? `<div class="jc-resize" title="Resize"></div>` : '') + `</div>`;
+  });
+  return h + `</div>`;
 }
 
-function renderBlockEl(block, content, isSelected) {
-  const el = document.createElement('div');
-  el.className = 'jcard-block' + (isSelected ? ' selected' : '');
-  el.dataset.id = block.id;
-  el.style.cssText = `left:${block.x}px;top:${block.y}px;width:${block.w}px;height:${block.h}px;`
-    + `transform:rotate(${block.rot||0}deg);transform-origin:center center;`;
+const JC_CSS = `
+.jc-card{position:relative;overflow:hidden;background:#fff;user-select:none;flex-shrink:0;color:#111}
+.jc-tmpl{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none}
+.jc-fold{position:absolute;top:0;bottom:0;border-left:1px dashed #c8c8c8}
+.jc-block{position:absolute;box-sizing:border-box}
+.jc-rot{position:absolute;left:50%;top:50%;overflow:hidden;box-sizing:border-box;pointer-events:none}
+.jc-row{display:flex;align-items:flex-end;white-space:nowrap;overflow:hidden;box-sizing:border-box}
+.jc-num{flex-shrink:0;opacity:.6;margin-right:.35em;min-width:1.3em;text-align:right}
+.jc-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.jc-dur{flex-shrink:0;margin-left:.5em;opacity:.75;font-variant-numeric:tabular-nums}
+.jc-head{font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.jc-spine{display:flex;align-items:center;justify-content:center;height:100%;white-space:nowrap;overflow:hidden;font-weight:700;letter-spacing:.04em;box-sizing:border-box}
+.jc-spine span{overflow:hidden;text-overflow:ellipsis}`;
+(function () { const s = document.createElement('style'); s.textContent = JC_CSS; document.head.appendChild(s); })();
 
-  // Inner content
-  const inner = document.createElement('div');
-  inner.className = 'jcard-block-inner';
-  if (block.type === 'sideA') {
-    inner.style.cssText = 'display:flex;flex-direction:column;height:100%;justify-content:space-between;';
-  }
-  inner.innerHTML = blockInnerHtml(block, content);
-  el.appendChild(inner);
-
-  // Handles (only visible when selected)
-  const resizeH = document.createElement('div');
-  resizeH.className = 'jcard-resize-handle';
-  resizeH.title = 'Resize';
-  el.appendChild(resizeH);
-
-  const rotH = document.createElement('div');
-  rotH.className = 'jcard-rotate-handle';
-  rotH.title = 'Rotate';
-  el.appendChild(rotH);
-
-  // Toolbar
-  const tb = document.createElement('div');
-  tb.className = 'jcard-block-toolbar';
-  tb.innerHTML = `
-    <span style="color:#aaa;font-size:10px;margin-right:2px">${block.label||block.id}</span>
-    <label style="color:#aaa;font-size:10px">size</label>
-    <input type="number" min="5" max="30" value="${block.fontSize||9}" title="Font size"
-      onchange="jcardSetFontSize('${block.id}',+this.value)" onclick="event.stopPropagation()">
-    <input type="color" value="${block.color||'#111111'}" title="Text color" style="width:24px;height:20px;padding:1px;border:none;background:none;cursor:pointer"
-      oninput="jcardSetColor('${block.id}',this.value)" onclick="event.stopPropagation()">
-    <button onclick="jcardDeleteBlock('${block.id}');event.stopPropagation()">✕</button>`;
-  el.appendChild(tb);
-
-  // Drag
-  el.addEventListener('mousedown', jcardBlockMousedown);
-  resizeH.addEventListener('mousedown', jcardResizeMousedown);
-  rotH.addEventListener('mousedown', jcardRotateMousedown);
-
-  return el;
-}
-
+// ── Render editor ──────────────────────────────────────────────────────────
 function renderJcard() {
-  const fontEl = document.getElementById('jcardFont');
-  const font   = fontEl ? fontEl.value : "'Arial Narrow', Arial, sans-serif";
-  const canvas = document.getElementById('jcardCanvas');
-  if (!canvas) return;
+  const stage = document.getElementById('jcardStage');
+  if (!stage) return;
+  if (!document.getElementById('jcardTemplateSel').options.length) jcBuildTemplateSelect();
+  if (!jc.inited) { jc.blocks = jcDefaultBlocks(jc.template); jc.inited = true; }
 
-  // Apply font
-  canvas.style.setProperty('--jcard-font', font);
-  canvas.style.fontFamily = font;
-
-  // Build tape nav
+  // Tape navigation
   const splits = appState.splits;
   const navEl  = document.getElementById('jcardTapeNav');
   if (splits.length > 1) {
     let h = '<div style="font-size:12px;color:var(--fg2);margin-bottom:6px;font-weight:500">Select tape:</div><div class="jcard-tape-nav">';
     splits.forEach((t, i) => {
-      h += `<button class="${i===appState.currentJcardTape?'active':''}" onclick="appState.currentJcardTape=${i};renderJcard()">Tape ${i+1}</button>`;
+      h += `<button class="${i === appState.currentJcardTape ? 'active' : ''}" onclick="appState.currentJcardTape=${i};renderJcard()">Tape ${i + 1}</button>`;
     });
     navEl.innerHTML = h + '</div>';
     navEl.style.display = 'block';
@@ -1749,245 +1330,214 @@ function renderJcard() {
     navEl.innerHTML = ''; navEl.style.display = 'none';
     appState.currentJcardTape = 0;
   }
+  document.getElementById('jcardPrintAllBtn').style.display = splits.length > 1 ? '' : 'none';
 
-  // Init blocks if first render
-  if (!jcardBlocks.length) jcardBlocks = jcardDefaultLayout();
+  // Fit the real-size card to the available width
+  const avail = Math.max(320, stage.clientWidth - 32);
+  jc.ppi = Math.max(60, Math.min(150, avail / jc.template.wIn));
 
-  const content = jcardGetContent();
-
-  // Remove old blocks (keep template img, cover art, no-template placeholder)
-  canvas.querySelectorAll('.jcard-block').forEach(el => el.remove());
-
-  // Render each block
-  jcardBlocks.forEach(block => {
-    const el = renderBlockEl(block, content, block.id === jcardSelectedId);
-    canvas.appendChild(el);
+  stage.innerHTML = jcCardHtml('edit');
+  stage.querySelectorAll('.jc-block').forEach(el => {
+    el.addEventListener('mousedown', jcBlockMousedown);
+    const r = el.querySelector('.jc-resize');
+    if (r) r.addEventListener('mousedown', jcResizeMousedown);
   });
+  document.getElementById('jcardSizeInfo').textContent =
+    `Actual size: ${jc.template.wIn.toFixed(2)}" × ${jc.template.hIn.toFixed(2)}" (${(jc.template.wIn * 25.4).toFixed(0)} × ${(jc.template.hIn * 25.4).toFixed(0)} mm)`;
+  jcRenderToolbar();
+}
+window.addEventListener('resize', () => {
+  if (document.getElementById('panel-jcard')?.classList.contains('active')) renderJcard();
+});
+
+function jcRenderToolbar() {
+  const tb = document.getElementById('jcardBlockBar');
+  const b = jc.blocks.find(b => b.id === jc.selected);
+  if (!b) {
+    tb.innerHTML = '<span class="hint" style="margin:0">Click a text box on the card to move, resize, rotate or restyle it.</span>';
+    return;
+  }
+  const m = jcMetrics(b, jc.template, jcardGetContent());
+  tb.innerHTML = `
+    <strong style="font-size:12px">${escHtml(b.label)}</strong>
+    <button onclick="jcRotate(-90)" title="Rotate left">⟲ Rotate</button>
+    <button onclick="jcRotate(90)" title="Rotate right">⟳ Rotate</button>
+    <label style="margin:0;font-size:12px">Text size</label>
+    <input type="number" min="4" max="36" step="0.5" style="width:64px;padding:4px 6px" value="${b.fontPt ?? ''}"
+      placeholder="${m.pt.toFixed(1)}" title="Points — leave empty for automatic"
+      onchange="jcSetFont(this.value)"> <span style="font-size:11px;color:var(--fg3)">pt ${b.fontPt ? '' : '(auto)'}</span>
+    ${b.fontPt ? '<button onclick="jcSetFont(\'\')">Auto size</button>' : ''}
+    ${b.type !== 'spine' ? `<label style="margin:0;font-size:12px;display:flex;gap:4px;align-items:center"><input type="checkbox" style="width:auto" ${b.header ? 'checked' : ''} onchange="jcSetHeader(this.checked)"> "Side ${b.type === 'sideA' ? 'A' : 'B'}" heading</label>` : ''}
+    <input type="color" value="${b.color}" title="Text colour" style="width:30px;height:26px;padding:1px" oninput="jcSetColor(this.value)">
+    <button onclick="jcDeleteBlock()" title="Remove this box">✕ Remove</button>`;
+}
+
+function jcSel() { return jc.blocks.find(b => b.id === jc.selected); }
+function jcRotate(d) { const b = jcSel(); if (!b) return; b.rot = ((b.rot + d + 180) % 360 + 360) % 360 - 180; renderJcard(); }
+function jcSetFont(v) { const b = jcSel(); if (!b) return; const n = parseFloat(v); b.fontPt = n > 0 ? n : null; renderJcard(); }
+function jcSetHeader(on) { const b = jcSel(); if (!b) return; b.header = on; renderJcard(); }
+function jcSetColor(c) {
+  const b = jcSel(); if (!b) return; b.color = c;
+  const el = document.querySelector(`#jcardCanvas .jc-block[data-id="${b.id}"] .jc-rot`);
+  if (el) el.style.color = c;
+}
+function jcDeleteBlock() { jc.blocks = jc.blocks.filter(b => b.id !== jc.selected); jc.selected = null; renderJcard(); }
+
+function jcAddBlock(type) {
+  if (!type) return;
+  const t = jc.template, turned = Math.abs(t.rot) % 180 === 90;
+  const labels = { spine: 'Title / spine', sideA: 'Side A', sideB: 'Side B' };
+  const w = turned ? Math.min(0.35, 2 / t.wIn) : 0.4, h = turned ? 0.45 : Math.min(0.35, 1.2 / t.hIn);
+  const b = {
+    id: type + '-' + Date.now().toString(36), type, label: labels[type] + ' (extra)',
+    x: 0.5 - w / 2, y: 0.5 - h / 2, w, h, rot: t.rot, fontPt: null, color: '#111111', header: true,
+  };
+  if (type === 'spine') { if (turned) b.w = 0.35 / t.wIn; else b.h = 0.35 / t.hIn; }
+  jc.blocks.push(b);
+  jc.selected = b.id;
+  document.getElementById('jcardAddSel').value = '';
+  renderJcard();
 }
 
 function resetJcardLayout() {
-  jcardBlocks = jcardDefaultLayout();
-  jcardSelectedId = null;
+  jc.blocks = jcDefaultBlocks(jc.template);
+  delete jc.layouts[jc.template.id];
+  jc.selected = null;
   renderJcard();
 }
 
-function jcardCanvasClick(e) {
-  if (e.target === document.getElementById('jcardCanvas') ||
-      e.target === document.getElementById('jcardTemplateImg') ||
-      e.target === document.getElementById('jcardNoTemplate') ||
-      e.target.closest('.jcard-cover-art')) {
-    jcardSelectedId = null;
-    renderJcard();
-  }
+function jcardStageMousedown(e) {
+  if (!e.target.closest('.jc-block') && jc.selected) { jc.selected = null; renderJcard(); }
 }
 
-function jcardSetFontSize(id, size) {
-  const b = jcardBlocks.find(b => b.id === id);
-  if (b) { b.fontSize = size; renderJcard(); }
-}
-function jcardSetColor(id, color) {
-  const b = jcardBlocks.find(b => b.id === id);
-  if (b) { b.color = color; renderJcard(); }
-}
-function jcardDeleteBlock(id) {
-  jcardBlocks = jcardBlocks.filter(b => b.id !== id);
-  if (jcardSelectedId === id) jcardSelectedId = null;
-  renderJcard();
-}
-
-// ── Drag ─────────────────────────────────────────────────────────────────
+// ── Drag / resize ──────────────────────────────────────────────────────────
 let _drag = null;
-function jcardBlockMousedown(e) {
-  if (e.target.classList.contains('jcard-resize-handle')) return;
-  if (e.target.classList.contains('jcard-rotate-handle')) return;
-  if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-  e.preventDefault();
-  e.stopPropagation();
-  const el = e.currentTarget;
-  const id = el.dataset.id;
-  jcardSelectedId = id;
-  renderJcard();
-  const b = jcardBlocks.find(b => b.id === id);
-  if (!b) return;
-  _drag = { type: 'move', id, startX: e.clientX, startY: e.clientY, origX: b.x, origY: b.y };
-  document.addEventListener('mousemove', jcardDragMove);
-  document.addEventListener('mouseup',   jcardDragUp);
-}
-
-function jcardResizeMousedown(e) {
+function jcBlockMousedown(e) {
+  if (e.target.classList.contains('jc-resize')) return;
   e.preventDefault(); e.stopPropagation();
-  const id = e.currentTarget.closest('.jcard-block').dataset.id;
-  const b  = jcardBlocks.find(b => b.id === id);
+  const id = e.currentTarget.dataset.id;
+  const b = jc.blocks.find(b => b.id === id);
   if (!b) return;
-  _drag = { type: 'resize', id, startX: e.clientX, startY: e.clientY, origW: b.w, origH: b.h };
-  document.addEventListener('mousemove', jcardDragMove);
-  document.addEventListener('mouseup',   jcardDragUp);
+  if (jc.selected !== id) { jc.selected = id; renderJcard(); }
+  _drag = { type: 'move', id, sx: e.clientX, sy: e.clientY, ox: b.x, oy: b.y };
+  document.addEventListener('mousemove', jcDragMove);
+  document.addEventListener('mouseup', jcDragUp);
 }
-
-function jcardRotateMousedown(e) {
+function jcResizeMousedown(e) {
   e.preventDefault(); e.stopPropagation();
-  const el = e.currentTarget.closest('.jcard-block');
-  const id = el.dataset.id;
-  const b  = jcardBlocks.find(b => b.id === id);
+  const id = e.currentTarget.closest('.jc-block').dataset.id;
+  const b = jc.blocks.find(b => b.id === id);
   if (!b) return;
-  const rect = el.getBoundingClientRect();
-  const cx = rect.left + rect.width  / 2;
-  const cy = rect.top  + rect.height / 2;
-  _drag = { type: 'rotate', id, cx, cy, origRot: b.rot || 0 };
-  document.addEventListener('mousemove', jcardDragMove);
-  document.addEventListener('mouseup',   jcardDragUp);
+  jc.selected = id;
+  _drag = { type: 'resize', id, sx: e.clientX, sy: e.clientY, ow: b.w, oh: b.h };
+  document.addEventListener('mousemove', jcDragMove);
+  document.addEventListener('mouseup', jcDragUp);
 }
-
-function jcardDragMove(e) {
+function jcDragMove(e) {
   if (!_drag) return;
-  const b = jcardBlocks.find(b => b.id === _drag.id);
+  const b = jc.blocks.find(b => b.id === _drag.id);
   if (!b) return;
+  const cw = jc.template.wIn * jc.ppi, ch = jc.template.hIn * jc.ppi;
+  const dx = (e.clientX - _drag.sx) / cw, dy = (e.clientY - _drag.sy) / ch;
   if (_drag.type === 'move') {
-    b.x = Math.round(_drag.origX + (e.clientX - _drag.startX));
-    b.y = Math.round(_drag.origY + (e.clientY - _drag.startY));
-    const el = document.querySelector(`.jcard-block[data-id="${b.id}"]`);
-    if (el) { el.style.left = b.x + 'px'; el.style.top = b.y + 'px'; }
-  } else if (_drag.type === 'resize') {
-    b.w = Math.max(40, Math.round(_drag.origW + (e.clientX - _drag.startX)));
-    b.h = Math.max(20, Math.round(_drag.origH + (e.clientY - _drag.startY)));
-    const el = document.querySelector(`.jcard-block[data-id="${b.id}"]`);
-    if (el) { el.style.width = b.w + 'px'; el.style.height = b.h + 'px'; }
-  } else if (_drag.type === 'rotate') {
-    const dx = e.clientX - _drag.cx;
-    const dy = e.clientY - _drag.cy;
-    const angle = Math.round(Math.atan2(dx, -dy) * 180 / Math.PI);
-    b.rot = angle;
-    const el = document.querySelector(`.jcard-block[data-id="${b.id}"]`);
-    if (el) el.style.transform = `rotate(${angle}deg)`;
+    b.x = Math.min(1 - b.w, Math.max(0, _drag.ox + dx));
+    b.y = Math.min(1 - b.h, Math.max(0, _drag.oy + dy));
+  } else {
+    b.w = Math.min(1 - b.x, Math.max(0.03, _drag.ow + dx));
+    b.h = Math.min(1 - b.y, Math.max(0.03, _drag.oh + dy));
   }
+  _drag.moved = true;
+  if (!_drag.raf) _drag.raf = requestAnimationFrame(() => { if (_drag) _drag.raf = 0; renderJcard(); });
 }
-
-function jcardDragUp() {
+function jcDragUp() {
   _drag = null;
-  document.removeEventListener('mousemove', jcardDragMove);
-  document.removeEventListener('mouseup',   jcardDragUp);
+  document.removeEventListener('mousemove', jcDragMove);
+  document.removeEventListener('mouseup', jcDragUp);
+  renderJcard();
 }
 
-// ── Convert a blob: or http: URL to a base64 data URI for embedded saves ──
-async function urlToDataUri(url) {
-  if (!url) return '';
-  try {
-    const resp = await fetch(url);
-    const blob = await resp.blob();
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror  = () => resolve('');
-      reader.readAsDataURL(blob);
-    });
-  } catch { return ''; }
+// ── Print / save ───────────────────────────────────────────────────────────
+function jcBuildDoc(allTapes) {
+  const title = document.getElementById('jcardTitle').value || 'Mixtape';
+  const font = document.getElementById('jcardFont').value;
+  const webFontMap = { 'Caveat': 'Caveat:wght@400;700', 'Dancing Script': 'Dancing+Script:wght@400;700',
+    'Indie Flower': 'Indie+Flower', 'Patrick Hand': 'Patrick+Hand',
+    'Courier Prime': 'Courier+Prime:wght@400;700', 'Oswald': 'Oswald:wght@400;700' };
+  let fontImport = '';
+  for (const [name, param] of Object.entries(webFontMap)) {
+    if (font.includes(name)) { fontImport = `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${param}&display=swap">`; break; }
+  }
+  const idxs = allTapes && appState.splits.length > 1 ? appState.splits.map((_, i) => i) : [appState.currentJcardTape];
+  const cards = idxs.map(i => `<div class="sheet"><div class="cut">${jcCardHtml('print', i)}</div></div>`).join('\n');
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>${escHtml(title)} — J-Card</title>
+${fontImport}
+<style>
+@page { margin: 0.4in; }
+html, body { margin: 0; padding: 0; background: #fff; }
+.sheet { page-break-after: always; break-after: page; padding: 0; }
+.sheet:last-child { page-break-after: auto; break-after: auto; }
+.cut { display: inline-block; outline: 0.5pt solid #9a9a9a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.note { font: 12px/1.5 sans-serif; color: #555; margin: 0 0 14px; }
+@media screen { body { padding: 24px; background: #6a6a6a; } .note { color: #eee; } .cut { box-shadow: 0 4px 24px rgba(0,0,0,.45); } .sheet { margin-bottom: 24px; } }
+@media print { .note { display: none; } }
+${JC_CSS}
+</style></head><body>
+<p class="note">Print at <strong>100% / Actual size</strong> (turn off “Fit to page”). Cut along the grey outline.</p>
+${cards}
+</body></html>`;
+}
+
+async function printJcard(allTapes) {
+  const html = jcBuildDoc(allTapes);
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;height:900px;border:0;';
+  document.body.appendChild(frame);
+  frame.srcdoc = html;
+  frame.onload = async () => {
+    try {
+      const doc = frame.contentDocument;
+      await Promise.race([doc.fonts ? doc.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 2500))]);
+      await Promise.all(Array.from(doc.images).map(img => img.complete ? 0 : new Promise(r => { img.onload = img.onerror = r; })));
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+    } catch (err) {
+      showToast('Printing failed — try “Save as HTML” and print that file.');
+    }
+    setTimeout(() => frame.remove(), 60000);
+  };
 }
 
 async function saveJcardHtml() {
-  const title   = document.getElementById('jcardTitle').value  || 'mixtape';
-  const fontEl  = document.getElementById('jcardFont');
-  const font    = fontEl ? fontEl.value : "'Arial Narrow', Arial, sans-serif";
-  const artUrl  = appState.currentArtUrl    || '';
-  const tmplUrl = appState.jcardTemplateUrl || '';
-
-  const [embeddedArt, embeddedTemplate] = await Promise.all([
-    artUrl  ? urlToDataUri(artUrl)  : Promise.resolve(''),
-    tmplUrl ? urlToDataUri(tmplUrl) : Promise.resolve(''),
-  ]);
-
-  // Google Font import for the chosen font
-  const webFontMap = { 'Caveat':'Caveat:wght@400;700', 'Dancing Script':'Dancing+Script:wght@400;700',
-    'Indie Flower':'Indie+Flower', 'Patrick Hand':'Patrick+Hand',
-    'Courier Prime':'Courier+Prime:wght@400;700', 'Oswald':'Oswald:wght@400;700' };
-  let fontImport = '';
-  for (const [name, param] of Object.entries(webFontMap)) {
-    if (font.includes(name)) {
-      fontImport = `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${param}&display=swap">`;
-      break;
-    }
-  }
-
-  const content = jcardGetContent();
-
-  // Build block CSS + HTML for saved file (no drag handles, just final positions)
-  const blocksHtml = jcardBlocks.map(b => {
-    let innerStyle = b.type === 'sideA'
-      ? 'display:flex;flex-direction:column;height:100%;justify-content:space-between;'
-      : '';
-    return `<div style="position:absolute;left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;`
-      + `transform:rotate(${b.rot||0}deg);transform-origin:center center;`
-      + `overflow:hidden;box-sizing:border-box;font-family:${font}">
-      <div style="width:100%;height:100%;overflow:hidden;box-sizing:border-box;padding:3px 5px;${innerStyle}">
-        ${blockInnerHtml(b, content)}
-      </div></div>`;
-  }).join('\n');
-
-  const html = `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<title>${escHtml(title)} J-Card</title>
-${fontImport}
-<style>
-@media print {
-  @page { size: 8.31in 4.13in landscape; margin: 0; }
-  body  { margin: 0; padding: 0; background: #fff; }
-  .jcard-wrap { width: 8.31in !important; height: 4.13in !important; box-shadow: none !important; }
-}
-body { margin: 0; padding: 24px; background: #555; display: flex;
-       flex-direction: column; align-items: center; min-height: 100vh;
-       font-family: ${font}; box-sizing: border-box; }
-.jcard-wrap { position: relative; width: 900px; height: 447px;
-              background: #e8e4dc; box-shadow: 0 4px 24px rgba(0,0,0,.5);
-              overflow: hidden; font-family: ${font}; }
-.jcard-tmpl { position: absolute; inset: 0; width: 100%; height: 100%;
-              object-fit: fill; display: block; pointer-events: none; }
-.jcard-cover-art { position: absolute; left: 25.18%; width: 30.82%;
-                   top: 0; bottom: 0; overflow: hidden; }
-.jcard-cover-art img { width: 100%; height: 100%; object-fit: cover; opacity: .82; display: block; }
-.jcard-side-label { font-size: 8px; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: #555; margin: 0 0 4px; padding-bottom: 3px;
-  border-bottom: 1px solid rgba(0,0,0,.18); }
-.jcard-tracklist { list-style: none; margin: 0; padding: 0; }
-.jcard-track { display: flex; gap: 4px; line-height: 1.5; color: #222; overflow: hidden; }
-.jcard-track-num  { min-width: 14px; color: #888; flex-shrink: 0; }
-.jcard-track-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jcard-track-dur  { color: #666; flex-shrink: 0; }
-.jcard-panel-title { font-weight: 700; color: #111; margin: 0 0 2px; line-height: 1.2;
-  text-shadow: 0 1px 4px rgba(255,255,255,.9); }
-.jcard-panel-artist { color: #333; margin: 0; letter-spacing: .05em;
-  text-transform: uppercase; text-shadow: 0 1px 2px rgba(255,255,255,.8); }
-.jcard-spine-text { writing-mode: vertical-rl; transform: rotate(180deg);
-  font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  white-space: nowrap; overflow: hidden; color: #111; display: block; height: 100%; }
-</style></head><body>
-<div class="jcard-wrap">
-  ${embeddedTemplate ? `<img class="jcard-tmpl" src="${embeddedTemplate}" alt="">` : ''}
-  <div class="jcard-cover-art">${embeddedArt ? `<img src="${embeddedArt}" alt="">` : ''}</div>
-  ${blocksHtml}
-</div>
-<p style="color:#ccc;font-size:11px;margin-top:14px;text-align:center">
-  Print: File → Print → Paper size 8.31"×4.13" landscape, margins 0
-</p>
-</body></html>`;
-
+  const title = document.getElementById('jcardTitle').value || 'mixtape';
+  const html = jcBuildDoc(true);
+  const fname = title.replace(/[^\w\- ]+/g, '').replace(/\s+/g, '_') + '_jcard.html';
   if (window.electronAPI) {
-    const result = await window.electronAPI.saveFile(
-      title.replace(/\s+/g, '_') + '_jcard.html',
-      [{ name: 'HTML J-Card', extensions: ['html'] }], html
-    );
+    const result = await window.electronAPI.saveFile(fname, [{ name: 'HTML J-Card', extensions: ['html'] }], html);
     if (result.saved) showToast('J-card saved: ' + result.path);
   } else {
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = title.replace(/\s+/g, '_') + '_jcard.html';
-    a.click();
+    a.href = url; a.download = fname; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 3000);
-    showToast('J-card saved — open and File → Print (8.31"×4.13" landscape, no margins).');
+    showToast('J-card saved. Open it and print at 100% / Actual size.');
   }
 }
 
-function saveJcardPng() {
-  showToast('Save as HTML, open it, then File → Print → Save as PDF (8.31"×4.13" landscape, no margins).');
+function showToast(msg) {
+  let el = document.getElementById('appToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'appToast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 18px rgba(0,0,0,.35);max-width:80vw;transition:opacity .3s';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 3800);
 }
 
 // ═══════════════════════════════════════════════

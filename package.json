@@ -1,7 +1,7 @@
 {
   "name": "mixtape-helper",
   "productName": "Mixtape Helper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Cassette mixtape planner, j-card designer, and Discogs calculator",
   "main": "main.js",
   "author": "Emmanuel",
