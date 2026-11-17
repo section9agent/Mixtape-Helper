@@ -101,8 +101,13 @@ jobs:
     name: Create Draft Release
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
-    # Skip on pull requests — only run on actual pushes
-    if: github.event_name != 'pull_request'
+    # Skip on pull requests. Still publish if the macOS job fails or can't get
+    # a runner (GitHub's Mac runners are often at capacity) — Windows and
+    # Linux must succeed.
+    if: >-
+      always() && github.event_name != 'pull_request' &&
+      needs.build-windows.result == 'success' &&
+      needs.build-linux.result == 'success'
     steps:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
